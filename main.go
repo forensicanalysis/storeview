@@ -202,8 +202,48 @@ func main() {
 		},
 	}
 
+	directoryTree := &cobraserver.Command{
+		Name:   "listTables",
+		Route:  "/tree",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			f.String("directory", "/", "item type")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, err := goforensicstore.NewJSONLite(storeName)
+			if err != nil {
+				return err
+			}
+
+			directory, err := flags.GetString("directory")
+			if err != nil {
+				return err
+			}
+
+			col := "origin.path"
+			query := fmt.Sprintf("SELECT substr(`%s`, length(\"%s\")+1, instr(substr(`%s`, 1+length(\"%s\")), \"/\")-1) as dir "+
+				"FROM file "+
+				"WHERE `%s` LIKE \"%s%%\" "+
+				"GROUP BY dir;",
+				col, directory, col, directory, col, directory)
+
+			directories, err := store.Store.(*gojsonlite.JSONLite).Query(query)
+			if err != nil {
+				return err
+			}
+
+			var children []string
+			for _, dir := range directories {
+				children = append(children, dir["dir"].(string))
+			}
+
+			return cobraserver.PrintJSON(w, children)
+		},
+	}
+
 	var staticPath pkger.Dir = "/dist"
-	rootCmd := cobraserver.Application("fstore", 800, 600, staticPath, false, listTables, selectItems, loadFile)
+	rootCmd := cobraserver.Application("fstore", 800, 600, staticPath, false, listTables, selectItems, loadFile, directoryTree)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Println(err)
