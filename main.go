@@ -228,6 +228,8 @@ func main() {
 				"GROUP BY dir;",
 				col, directory, col, directory, col, directory)
 
+			println(query)
+
 			directories, err := store.Store.(*gojsonlite.JSONLite).Query(query)
 			if err != nil {
 				return err
