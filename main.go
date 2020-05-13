@@ -207,7 +207,8 @@ func main() {
 		Route:  "/tree",
 		Method: http.MethodGet,
 		SetupFlags: func(f *pflag.FlagSet) {
-			f.String("directory", "/", "item type")
+			f.String("directory", "/", "current directory")
+			f.String("type", "file", "item type")
 		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			storeName := flags.Args()[0]
@@ -221,12 +222,26 @@ func main() {
 				return err
 			}
 
-			col := "origin.path"
-			query := fmt.Sprintf("SELECT substr(`%s`, length(\"%s\")+1, instr(substr(`%s`, 1+length(\"%s\")), \"/\")-1) as dir "+
-				"FROM file "+
+			elementType, err := flags.GetString("type")
+			if err != nil {
+				return err
+			}
+
+			types := map[string]map[string]string{
+				"file": {"separator": "/", "col": "origin.path"},
+				"directory": {"separator": "/", "col": "path"},
+				"windows-registry-key": {"separator": "\\", "col": "key"},
+			}
+
+			col := types[elementType]["col"]
+			separator := types[elementType]["separator"]
+			query := fmt.Sprintf("SELECT substr(`%s`, length(\"%s\")+1, instr(substr(`%s`, 1+length(\"%s\")), \"%s\")-1) as dir "+
+				"FROM '%s' "+
 				"WHERE `%s` LIKE \"%s%%\" "+
 				"GROUP BY dir;",
-				col, directory, col, directory, col, directory)
+				col, directory, col, directory, separator, elementType, col, directory)
+
+			println(query)
 
 			println(query)
 
