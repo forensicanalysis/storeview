@@ -42,6 +42,7 @@
           </v-list-item>
           <hr/>
           <v-treeview
+            v-if="refresh"
             activatable
             hoverable
             rounded
@@ -66,6 +67,12 @@
         </v-list-item-group>
       </v-list>
     </v-navigation-drawer>
+
+    <h1>Active</h1>
+    <a>{{this.active}}</a>
+    <hr/>
+    <h1>Active</h1>
+    <a>{{this.open}}</a>
 
     <v-text-field
       style="margin-top: 50px"
@@ -169,6 +176,7 @@
         search: '',
         active: [],
         open: [],
+        refresh: true,
 
         navigationLeft: {
           mini: false,
@@ -199,7 +207,7 @@
       count: function () {
         for (let i = 0; i < this.$store.state.tables.length; i++) {
           if (this.$store.state.type === this.$store.state.tables[i]['name']) {
-            console.log(this.$store.state.tables[i])
+            console.log(this.$store.state.tables[i]);
             return this.$store.state.tables[i]['count'];
           }
         }
@@ -226,9 +234,8 @@
       directories() {
         return [
           {
-            id: 0,
             path: '',
-            name: 'Directories',
+            name: 'Navigation',
             children: [],
           }
         ];
@@ -345,13 +352,37 @@
         return bytes.toFixed(1) + '' + units[u];
       },
 
+      forceRefresh() {
+        this.refresh = false;
+        this.$nextTick(() => {
+          this.refresh = true;
+        });
+      },
+
       loadList(table) {
+
+        while (this.directories.length !== 0) {
+          this.directories.pop();
+        }
+
+        this.directories.push({
+          path: '',
+          name: 'Navigation',
+          children: [],
+        });
+
+        this.active = [];
+        this.open = [];
+
+        this.forceRefresh();
+
         this.$store.commit('setItem', {});
         if (!this.navigationRight.mini) {
           this.toogleRight();
         }
         this.$store.commit('setTable', table);
         this.$store.dispatch('loadItems');
+
       },
 
       select(e) {
@@ -388,15 +419,37 @@
 
       updatedir(e) {
         console.log('updatedir', e);
+        console.log(JSON.stringify(this.directories, null, 1));
 
-        if(e.length === 0) {
-          this.filter['table'] = this.$store.state.type
-          this.filter['columns']['`origin.path`'] = '';
+        let slash = '';
+        let column = '';
+        let type = this.$store.state.type;
+
+        this.filter = { 'table': type, 'columns': {} };
+        this.search = ''
+
+        if (type === 'directory') {
+          console.log('DIR');
+          slash = '/';
+          column = 'path';
+        } else if (type === 'file') {
+          console.log('FILE');
+          slash = '/';
+          column = '`origin.path`';
+        } else if (type === 'windows-registry-key') {
+          console.log('KEY');
+          slash = '\\';
+          column = '`key`';
+        } else {
+          console.log('TABLE DOES NOT EXIST!');
         }
 
-        else {
-          this.filter['table'] = this.$store.state.type
-          this.filter['columns']['`origin.path`'] = e[0] + '/';
+        if (e.length === 0) {
+          this.filter['table'] = type;
+          this.filter['columns'][column] = '';
+        } else {
+          this.filter['table'] = type;
+          this.filter['columns'][column] = e[0] + slash;
         }
 
         this.$store.commit('setFilter', this.filter);
@@ -405,7 +458,7 @@
 
       searchFilter() {
         console.log('search');
-        this.filter['table'] = this.$store.state.type
+        this.filter['table'] = this.$store.state.type;
 
         this.filter['columns']['name'] = this.search;
 
@@ -414,14 +467,14 @@
 
       },
 
-      clearFilter () {
-        this.search = ''
-        this.searchFilter()
+      clearFilter() {
+        this.search = '';
+        this.searchFilter();
       },
 
       async fetch(item) {
 
-        let directories = []
+        let directories = [];
 
         this.$store.dispatch('loadDirectories', { path: item.path })
           .then(response => {
@@ -437,19 +490,23 @@
           })
           .catch(error => console.warn(error));
 
-        await pause(1000)
+        await pause(1000);
 
-        const key = item.path
-        const parentNode = this.$refs.treeView.nodes[key]
+        const key = item.path;
+        const parentNode = this.$refs.treeView.nodes[key];
 
         let childNode;
         directories.forEach((child) => {
-          childNode = {...parentNode, item: child, vnode: null}
-          this.$refs.treeView.nodes[child.path] = childNode
-        })
+          childNode = {
+            ...parentNode,
+            item: child,
+            vnode: null
+          };
+          this.$refs.treeView.nodes[child.path] = childNode;
+        });
 
         for (let i = 0; i < directories.length; i++) {
-            item.children.push(directories[i]);
+          item.children.push(directories[i]);
         }
 
       },

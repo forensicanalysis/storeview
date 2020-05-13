@@ -38,8 +38,6 @@ export default new Vuex.Store({
       'alert': { 'requires': ['plaso', 'compare'] },
     },
 
-    id: 1,
-
   },
 
   mutations: {
@@ -136,6 +134,7 @@ export default new Vuex.Store({
 
     loadItems({ commit, state }) {
       let url = '/items?type=' + state.type;
+      console.log(state.type)
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, function (value, column) {
           url += '&filter[' + column + ']=' + encodeURI(value);
@@ -174,23 +173,59 @@ export default new Vuex.Store({
       return new Promise(resolve => {
 
         let directories = []
+        let slash = ''
+        let url = ''
 
-        let url = '/tree?directory=' + payload.path + '/';
+        if (state.type === 'directory') {
+          slash = '/'
+        }
+        else if (state.type === 'file') {
+          slash = '/'
+        }
+        else if (state.type === 'windows-registry-key') {
+          slash = '\\'
+        }
+        else {
+          console.log("TABLE DOES NOT EXIST!")
+        }
+
+        if((state.type === 'windows-registry-key') && (payload.path === '')) {
+          url = '/tree?directory=' + payload.path;
+        }
+        else {
+          url = '/tree?directory=' + payload.path + slash;
+        }
+
+        url += '&type=' + state.type
+
+        // url = '/tree?directory=/C/&type=directory'
+        console.log('***************\n', url)
 
         invoke('GET', url, [], function (data) {
+          console.log(data)
           return
         }).then(response => {
 
           for (let i = 0; i < response.length; i++) {
-            directories.push(
-              {
-                id: state.id,
-                path: payload.path + '/' + response[i],
-                name: response[i],
-                children: []
-              }
-            );
-            state.id += 1;
+
+            if((state.type === 'windows-registry-key') && (payload.path === '')) {
+              directories.push(
+                {
+                  path: response[i],
+                  name: response[i],
+                  children: []
+                }
+              );
+            }
+            else {
+              directories.push(
+                {
+                  path: payload.path + slash + response[i],
+                  name: response[i],
+                  children: []
+                }
+              );
+            }
             resolve(directories)
           }
 
