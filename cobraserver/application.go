@@ -22,14 +22,14 @@ type Command struct {
 func Application(name string, width, height int, staticPath pkger.Dir, uiRoot bool, commands ...*Command) *cobra.Command {
 	var rootCmd *cobra.Command
 
-	uiCmd := UICommand(name, width, height, staticPath, commands...)
-	if uiRoot {
-		rootCmd = uiCmd
-		rootCmd.Use = name
-	} else {
-		rootCmd = &cobra.Command{Use: name}
-		rootCmd.AddCommand(uiCmd)
-	}
+	//uiCmd := UICommand(name, width, height, staticPath, commands...)
+	//if uiRoot {
+	//	rootCmd = uiCmd
+	//	rootCmd.Use = name
+	//} else {
+	rootCmd = &cobra.Command{Use: name}
+	//	rootCmd.AddCommand(uiCmd)
+	//}
 
 	rootCmd.AddCommand(Commandline(commands...)...)
 	rootCmd.AddCommand(ServeCommand(staticPath, commands...))

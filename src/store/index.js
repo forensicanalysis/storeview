@@ -6,11 +6,13 @@ import { templates } from './templates';
 Vue.use(Vuex);
 
 export default new Vuex.Store({
+
   state: {
     tables: [],
 
     type: 'file',
     items: [],
+    all: [],
     header: [],
     sort: {
       table: '',
@@ -35,14 +37,21 @@ export default new Vuex.Store({
       'compare': { 'requires': ['hash'] },
       'alert': { 'requires': ['plaso', 'compare'] },
     },
+
+    id: 1,
+
   },
+
   mutations: {
+
     setLimit(state, data) {
       state.limit = data;
     },
+
     setOffset(state, data) {
       state.offset = data;
     },
+
     setTable(state, data) {
       state.sort = {
         table: '',
@@ -54,9 +63,11 @@ export default new Vuex.Store({
       };
       state.type = data;
     },
+
     setTables(state, data) {
       state.tables = data;
     },
+
     setItems(state, data) {
       let calcHeaders = function () {
         let headers = [];
@@ -84,7 +95,10 @@ export default new Vuex.Store({
       }
       state.offset = 0;
       state.items = data;
+      console.log('SIZE');
+      console.log(state.items.length);
     },
+
     setItem(state, data) {
       if (Vue._.isEmpty(data)) {
         state.listPane = 80;
@@ -95,28 +109,37 @@ export default new Vuex.Store({
       }
       state.item = data;
     },
+
     setlistPane(state, data) {
       state.listPane = data;
     },
     setSort(state, data) {
       state.sort = data;
     },
+
     setFilter(state, data) {
       state.filter = data;
-    }
+    },
+
   },
+
   actions: {
-    created({ commit, dispatch }) {
+
+    created({ commit, dispatch, state }) {
       invoke('GET', '/tables', [], function (tables) {
         commit('setTables', tables);
       });
+
       dispatch('loadItems');
+
     },
+
     loadItems({ commit, state }) {
       let url = '/items?type=' + state.type;
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, function (value, column) {
           url += '&filter[' + column + ']=' + encodeURI(value);
+          console.log(url)
         });
       }
       if (!Vue._.isEmpty(state.sort) && state.sort.type !== '' && !Vue._.isEmpty(state.sort.columns)) {
@@ -138,23 +161,55 @@ export default new Vuex.Store({
       url += '&offset=' + state.offset;
       url += '&limit=' + state.limit;
 
+      console.log(url);
+
       invoke('GET', url, [], function (items) {
+        console.log(items)
         commit('setItems', items);
       });
+
     },
-    /* loadItem({ commit }, uid) {
-      invoke('GET', '/items?uid=' + uid, [], function (item) {
-        commit('setItem', item);
+
+    loadDirectories({ commit, state }, payload) {
+      return new Promise(resolve => {
+
+        let directories = []
+
+        let url = '/tree?directory=' + payload.path + '/';
+
+        invoke('GET', url, [], function (data) {
+          return
+        }).then(response => {
+
+          for (let i = 0; i < response.length; i++) {
+            directories.push(
+              {
+                id: state.id,
+                path: payload.path + '/' + response[i],
+                name: response[i],
+                children: []
+              }
+            );
+            state.id += 1;
+            resolve(directories)
+          }
+
+        })
+
       });
-    },*/
+    },
+
     updateSort({ commit, dispatch }, data) {
       commit('setSort', data);
       dispatch('loadItems');
     },
+
     updatePage({ commit, dispatch }, data) {
       commit('setOffset', data);
       dispatch('loadItems');
-    }
+    },
   },
+
   modules: {},
+
 });

@@ -40,11 +40,47 @@
               <span v-if="'count' in table">{{table['count']}}</span>
             </v-list-item-icon>
           </v-list-item>
+          <hr/>
+          <v-treeview
+            activatable
+            hoverable
+            rounded
+            dense
+            transition
+            @update:active="updatedir"
+            :active.sync="active"
+            :items="directories"
+            :load-children="fetch"
+            :open.sync="open"
+            item-key="path"
+            color="warning"
+            ref="treeView"
+          >
+            <template v-slot:prepend="{ item, open }">
+              <v-icon v-if="item.children">
+                {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+              </v-icon>
+              <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
+            </template>
+          </v-treeview>
         </v-list-item-group>
       </v-list>
     </v-navigation-drawer>
 
-    <v-card class="mt-10" tile>
+    <v-text-field
+      style="margin-top: 50px"
+      v-model="search"
+      :append-icon="'mdi-send'"
+      filled
+      clear-icon="mdi-close-circle"
+      clearable
+      label="Search"
+      type="text"
+      @click:append="searchFilter"
+      @click:clear="clearFilter"
+    ></v-text-field>
+
+    <v-card class="mt-10" tile style="margin-top: 3px !important;">
       <v-data-table
         :headers="$store.state.headers"
         :items="$store.state.items"
@@ -111,14 +147,29 @@
   import item from '@/views/Document';
   import { DateTime } from 'luxon';
 
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
   export default {
+
     name: 'items',
+
     components: {
       JsonToHtml,
       item
     },
+
     data: function () {
       return {
+
+        filter: {
+          'table': this.$store.state.type,
+          'columns': {}
+        },
+
+        search: '',
+        active: [],
+        open: [],
+
         navigationLeft: {
           mini: false,
           shown: true,
@@ -126,6 +177,7 @@
           oldWidth: 250,
           borderSize: 3,
         },
+
         navigationRight: {
           mini: true,
           shown: true,
@@ -133,26 +185,35 @@
           oldWidth: 500,
           borderSize: 3,
         },
+
         itemTypeIndex: 0,
         loading: false,
         options: {},
+
       };
+
     },
+
     computed: {
+
       count: function () {
         for (let i = 0; i < this.$store.state.tables.length; i++) {
           if (this.$store.state.type === this.$store.state.tables[i]['name']) {
+            console.log(this.$store.state.tables[i])
             return this.$store.state.tables[i]['count'];
           }
         }
         return 0;
       },
+
       directionLeft() {
         return this.navigationLeft.shown === false ? 'Open' : 'Closed';
       },
+
       directionRight() {
         return this.navigationLeft.shown === false ? 'Open' : 'Closed';
       },
+
       paneSize: {
         get() {
           return this.$store.state.listPane;
@@ -160,9 +221,23 @@
         set(value) {
           this.$store.commit('setlistPane', value);
         }
-      }
+      },
+
+      directories() {
+        return [
+          {
+            id: 0,
+            path: '',
+            name: 'Directories',
+            children: [],
+          }
+        ];
+      },
+
     },
+
     methods: {
+
       toggle(navigation) {
         if (!navigation.mini) {
           navigation.oldWidth = parseInt(navigation.width, 10);
@@ -174,12 +249,15 @@
           navigation.width = parseInt(navigation.oldWidth, 10);
         }
       },
+
       toogleLeft() {
         this.toggle(this.navigationLeft);
       },
+
       toogleRight() {
         this.toggle(this.navigationRight);
       },
+
       setBorderWidthLeft() {
         let i = this.$refs.drawerLeft.$el.querySelector(
           '.v-navigation-drawer__border'
@@ -187,6 +265,7 @@
         i.style.width = this.navigationLeft.borderSize + 'px';
         i.style.cursor = 'ew-resize';
       },
+
       setBorderWidthRight() {
         let i = this.$refs.drawerRight.$el.querySelector(
           '.v-navigation-drawer__border'
@@ -194,10 +273,12 @@
         i.style.width = this.navigationRight.borderSize + 'px';
         i.style.cursor = 'ew-resize';
       },
+
       setEventsAll() {
         this.setEvents(this.$refs.drawerLeft.$el, this.navigationLeft);
         this.setEvents(this.$refs.drawerRight.$el, this.navigationRight);
       },
+
       setEvents(el, navigation) {
         const minSize = navigation.borderSize;
         const drawerBorder = el.querySelector('.v-navigation-drawer__border');
@@ -263,6 +344,7 @@
         } while (Math.abs(bytes) >= thresh && u < units.length - 1);
         return bytes.toFixed(1) + '' + units[u];
       },
+
       loadList(table) {
         this.$store.commit('setItem', {});
         if (!this.navigationRight.mini) {
@@ -270,18 +352,20 @@
         }
         this.$store.commit('setTable', table);
         this.$store.dispatch('loadItems');
-
       },
+
       select(e) {
         this.$store.commit('setItem', e);
         if (this.navigationRight.mini) {
           this.toogleRight();
         }
       },
+
       toLocal(s) {
         return DateTime.fromISO(s)
           .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
       },
+
       updateopt(e) {
         console.log('updateopt', e);
         this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
@@ -297,20 +381,94 @@
             sort['columns'][e.sortBy[i]] = 'ASC';
           }
         }
-        this.$store.commit('setSort', sort);
 
+        this.$store.commit('setSort', sort);
         this.$store.dispatch('loadItems');
       },
+
+      updatedir(e) {
+        console.log('updatedir', e);
+
+        if(e.length === 0) {
+          this.filter['table'] = this.$store.state.type
+          this.filter['columns']['`origin.path`'] = '';
+        }
+
+        else {
+          this.filter['table'] = this.$store.state.type
+          this.filter['columns']['`origin.path`'] = e[0] + '/';
+        }
+
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+      },
+
+      searchFilter() {
+        console.log('search');
+        this.filter['table'] = this.$store.state.type
+
+        this.filter['columns']['name'] = this.search;
+
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+
+      },
+
+      clearFilter () {
+        this.search = ''
+        this.searchFilter()
+      },
+
+      async fetch(item) {
+
+        let directories = []
+
+        this.$store.dispatch('loadDirectories', { path: item.path })
+          .then(response => {
+            if ((response.length === 1) && (response[0].name === '/')) {
+              delete item.children;
+            } else {
+              for (let i = 0; i < response.length; i++) {
+                if (response[i].name !== '/') {
+                  directories.push(response[i]);
+                }
+              }
+            }
+          })
+          .catch(error => console.warn(error));
+
+        await pause(1000)
+
+        const key = item.path
+        const parentNode = this.$refs.treeView.nodes[key]
+
+        let childNode;
+        directories.forEach((child) => {
+          childNode = {...parentNode, item: child, vnode: null}
+          this.$refs.treeView.nodes[child.path] = childNode
+        })
+
+        for (let i = 0; i < directories.length; i++) {
+            item.children.push(directories[i]);
+        }
+
+      },
+
     },
+
     mounted() {
       this.setBorderWidthLeft();
       this.setBorderWidthRight();
       this.setEventsAll();
     },
+
     destroyed() {
       this.$store.commit('setItem', {});
     }
+
   };
+
+
 </script>
 
 <style>
