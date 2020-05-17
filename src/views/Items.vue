@@ -68,24 +68,37 @@
       </v-list>
     </v-navigation-drawer>
 
-    <h1>Active</h1>
-    <a>{{this.active}}</a>
-    <hr/>
-    <h1>Active</h1>
-    <a>{{this.open}}</a>
+    <v-container fluid>
+      <v-row align="center">
 
-    <v-text-field
-      style="margin-top: 50px"
-      v-model="search"
-      :append-icon="'mdi-send'"
-      filled
-      clear-icon="mdi-close-circle"
-      clearable
-      label="Search"
-      type="text"
-      @click:append="searchFilter"
-      @click:clear="clearFilter"
-    ></v-text-field>
+        <v-col class="d-flex" cols="12" sm="9">
+          <v-text-field
+            style="margin-top: 50px"
+            v-model="search"
+            :append-icon="'mdi-send'"
+            outlined
+            clear-icon="mdi-close-circle"
+            clearable
+            label="Search"
+            type="text"
+            @click:append="searchFilter"
+            @click:clear="clearFilter"
+          ></v-text-field>
+        </v-col>
+
+        <v-col class="d-flex" cols="12" sm="3">
+          <v-select
+            v-if="refresh"
+            style="margin-top: 50px; width: 300px"
+            :items="$store.state.headers"
+            v-model="searchField"
+            outlined
+            label="Field"
+          ></v-select>
+        </v-col>
+
+      </v-row>
+    </v-container>
 
     <v-card class="mt-10" tile style="margin-top: 3px !important;">
       <v-data-table
@@ -173,6 +186,7 @@
           'columns': {}
         },
 
+        searchField: '',
         search: '',
         active: [],
         open: [],
@@ -373,6 +387,7 @@
 
         this.active = [];
         this.open = [];
+        this.searchField = '';
 
         this.forceRefresh();
 
@@ -460,10 +475,19 @@
         console.log('search');
         this.filter['table'] = this.$store.state.type;
 
-        this.filter['columns']['name'] = this.search;
+        let column = '';
 
+        if(this.searchField === 'origin') {
+          column = '`origin.path`';
+        }
+        else {
+          column = this.searchField;
+        }
+
+        this.filter['columns'][column] = this.search;
         this.$store.commit('setFilter', this.filter);
         this.$store.dispatch('loadItems');
+        delete this.filter['columns'][column]
 
       },
 
