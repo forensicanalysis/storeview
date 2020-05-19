@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar app scolor="light-blue darken-3" style="background-color: #004c8c" dark clipped-right clipped-left>
-      <v-toolbar-title class="mr-8">forensicstore</v-toolbar-title>
+    <v-app-bar app color="primary" dark clipped-right clipped-left flat>
+      <v-toolbar-title class="mr-8">Elementary</v-toolbar-title>
       <!--v-spacer/-->
       <v-toolbar-items>
         <v-btn v-for="(name, route) in menu" :key="name" @click="$router.push(route)" text>
@@ -38,6 +38,19 @@
 </script>
 
 <style>
+  body {
+    font-family: 'Roboto', sans-serif;
+  }
+
+  h1, h2, h3, .v-toolbar {
+    font-family: 'Roboto Slab', serif;
+  }
+
+  .v-btn--fab {
+    border-radius: 0;
+    border-radius: 0;
+  }
+
   dt {
     font-weight: bold;
   }
