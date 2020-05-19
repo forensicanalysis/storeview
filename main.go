@@ -13,9 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 
-	"github.com/forensicanalysis/forensicstore/goforensicstore"
-	"github.com/forensicanalysis/forensicstore/gojsonlite"
-	"github.com/forensicanalysis/forensicstore/gostore"
+	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
@@ -31,42 +29,38 @@ func main() {
 		Method: http.MethodGet,
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			storeName := flags.Args()[0]
-			store, err := goforensicstore.NewJSONLite(storeName)
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
+			defer teardown()
 
-			items, err := store.Store.(*gojsonlite.JSONLite).Query("SELECT name FROM sqlite_master")
-			if err != nil {
-				return err
-			}
-
-			var filtered []gostore.Item
-			for _, item := range items {
-				if name, ok := item["name"]; ok {
-					if sname, ok := name.(string); ok {
-						if !strings.HasPrefix(sname, "_") && !strings.HasPrefix(sname, "sqlite") {
-
-							items, err := store.Store.(*gojsonlite.JSONLite).Query("SELECT count(uid) as count FROM `" + sname + "`")
-							if err != nil {
-								return errors.Wrap(err, sname)
-							}
-
-							if len(items) > 0 {
-								if count, ok := items[0]["count"]; ok {
-									if cint, ok := count.(float64); ok {
-										item["count"] = int(cint)
-									}
-								}
-							}
-
-							filtered = append(filtered, item)
-						}
-					}
+			conn := store.Connection()
+			stmt := conn.Prep(
+				"SELECT " +
+					"json_extract(json, '$.type') as type, " +
+					"count(json) as count " +
+					"FROM elements " +
+					"GROUP BY json_extract(json, '$.type')",
+			)
+			var filtered []forensicstore.Element
+			for {
+				if hasRow, err := stmt.Step(); err != nil {
+					return err
+				} else if !hasRow {
+					break
 				}
+				filtered = append(filtered, forensicstore.Element{
+					"name":  stmt.GetText("type"),
+					"count": stmt.GetInt64("count"),
+				})
+			}
+			err = stmt.Finalize()
+			if err != nil {
+				return err
 			}
 
-			return cobraserver.PrintJSON(w, filtered)
+			return cobraserver.PrintAny(w, filtered)
 		},
 	}
 
@@ -89,10 +83,11 @@ func main() {
 			}
 
 			storeName := flags.Args()[0]
-			store, err := goforensicstore.NewJSONLite(storeName)
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
+			defer teardown()
 
 			// get single item
 			if uid != "" {
@@ -162,11 +157,11 @@ func main() {
 			opt.Limit = limit
 			opt.Offset = offset
 
-			items, err := QueryStore(store.Store.(*gojsonlite.JSONLite), name, opt)
+			items, err := QueryStore(store, name, opt)
 			if err != nil {
 				return err
 			}
-			return cobraserver.PrintJSON(w, items)
+			return cobraserver.PrintJSONList(w, items)
 		},
 	}
 
@@ -187,10 +182,11 @@ func main() {
 			}
 
 			storeName := flags.Args()[0]
-			store, err := goforensicstore.NewJSONLite(storeName)
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
+			defer teardown()
 
 			f, err := store.LoadFile(path.Join(storeName, p)) // TODO: fix in forensicstore
 			if err != nil {
@@ -203,7 +199,7 @@ func main() {
 	}
 
 	directoryTree := &cobraserver.Command{
-		Name:   "listTables",
+		Name:   "listTree",
 		Route:  "/tree",
 		Method: http.MethodGet,
 		SetupFlags: func(f *pflag.FlagSet) {
@@ -212,10 +208,11 @@ func main() {
 		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			storeName := flags.Args()[0]
-			store, err := goforensicstore.NewJSONLite(storeName)
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
+			defer teardown()
 
 			directory, err := flags.GetString("directory")
 			if err != nil {
@@ -228,32 +225,41 @@ func main() {
 			}
 
 			types := map[string]map[string]string{
-				"file": {"separator": "/", "col": "origin.path"},
-				"directory": {"separator": "/", "col": "path"},
-				"windows-registry-key": {"separator": "\\", "col": "key"},
+				"file":                 {"separator": "/", "col": "json_extract(json, '$.origin.path')"},
+				"directory":            {"separator": "/", "col": "json_extract(json, '$.path')"},
+				"windows-registry-key": {"separator": "\\", "col": "json_extract(json, '$.key')"},
 			}
 
 			col := types[elementType]["col"]
 			separator := types[elementType]["separator"]
-			query := fmt.Sprintf("SELECT substr(`%s`, length(\"%s\")+1, instr(substr(`%s`, 1+length(\"%s\")), \"%s\")-1) as dir "+
-				"FROM '%s' "+
-				"WHERE `%s` LIKE \"%s%%\" "+
-				"GROUP BY dir;",
+			query := fmt.Sprintf("SELECT substr(%s, length('%s')+1, instr(substr(%s, 1+length('%s')), '%s')-1) as dir "+
+				"FROM 'elements' "+
+				"WHERE json_extract(json, '$.type') = '%s' "+
+				"AND %s LIKE '%s%%' "+
+				"GROUP BY dir",
 				col, directory, col, directory, separator, elementType, col, directory)
 
-			println(query)
+			fmt.Println(query)
 
-			directories, err := store.Store.(*gojsonlite.JSONLite).Query(query)
+			var children []string
+
+			conn := store.Connection()
+
+			stmt := conn.Prep(query)
+			for {
+				if hasRow, err := stmt.Step(); err != nil {
+					return err
+				} else if !hasRow {
+					break
+				}
+				children = append(children, stmt.GetText("dir"))
+			}
+			err = stmt.Finalize()
 			if err != nil {
 				return err
 			}
 
-			var children []string
-			for _, dir := range directories {
-				children = append(children, dir["dir"].(string))
-			}
-
-			return cobraserver.PrintJSON(w, children)
+			return cobraserver.PrintAny(w, children)
 		},
 	}
 
@@ -290,26 +296,28 @@ func NewSelectOptions() *SelectOptions {
 	}
 }
 
-func QueryStore(store *gojsonlite.JSONLite, itemType string, options *SelectOptions) ([]gostore.Item, error) {
-	q := fmt.Sprintf("SELECT * FROM \"%s\"", itemType)
+func QueryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) ([]forensicstore.JSONElement, error) {
+	q := "SELECT json FROM elements"
+
+	filters := []string{
+		fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType),
+	}
 
 	if len(options.Filter) > 0 {
-		var filters []string
 		for column, filtering := range options.Filter {
 			if filtering != "" {
-				filters = append(filters, fmt.Sprintf("%s LIKE '%%%s%%'", column, filtering))
+				filters = append(filters, fmt.Sprintf("json_extract(json, '$.%s') LIKE '%%%s%%'", column, filtering))
 			}
 		}
-		if len(filters) > 0 {
-			q += " WHERE " + strings.Join(filters, " AND ")
-		}
 	}
+
+	q += " WHERE " + strings.Join(filters, " AND ")
 
 	if len(options.Sort) > 0 {
 		var sorts []string
 		for column, sorting := range options.Sort {
 			if sorting != "" {
-				sorts = append(sorts, fmt.Sprintf("%s %s", column, sorting))
+				sorts = append(sorts, fmt.Sprintf("json_extract(json, '$.%s') %s", column, sorting))
 			}
 		}
 		if len(sorts) > 0 {
