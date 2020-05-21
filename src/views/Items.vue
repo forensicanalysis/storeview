@@ -113,14 +113,38 @@
         @click:row="select"
         :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       >
-        <template v-slot:item.accessed="{ item }">
-          <div>{{ toLocal(item.accessed) }}</div>
+
+        <template v-slot:top>
+          <v-icon @click="">mdi-search</v-icon>
         </template>
-        <template v-slot:item.modified="{ item }">
-          <div>{{ toLocal(item.modified) }}</div>
+
+        <template v-slot:body.prepend>
+          <tr>
+            <th v-for="h in $store.state.headers" role="columnheader" scope="col">
+              <v-combobox
+                v-model.sync="itemscol[h.value]"
+                :search-input.sync="searchcol[h.value]"
+                multiple
+                small-chips
+                dense
+                hide-no-data
+                deletable-chips
+                clearable
+                @change="searchFilter"
+                append-icon=""
+              />
+            </th>
+          </tr>
         </template>
-        <template v-slot:item.created="{ item }">
-          <div>{{ toLocal(item.created) }}</div>
+
+        <template v-slot:item.atime="{ item }">
+          <div>{{ toLocal(item.atime) }}</div>
+        </template>
+        <template v-slot:item.mtime="{ item }">
+          <div>{{ toLocal(item.mtime) }}</div>
+        </template>
+        <template v-slot:item.ctime="{ item }">
+          <div>{{ toLocal(item.ctime) }}</div>
         </template>
         <template v-slot:item.origin="{ item }">
           <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
@@ -179,6 +203,9 @@
 
     data: function () {
       return {
+
+        itemscol: {},
+        searchcol: {},
 
         filter: {
           'table': this.$store.state.type,
@@ -372,11 +399,14 @@
         });
       },
 
-      loadList(table) {
+      async loadList(table) {
 
         while (this.directories.length !== 0) {
           this.directories.pop();
         }
+
+        this.itemscol = {};
+        this.searchcol = {};
 
         this.directories.push({
           path: '',
@@ -388,14 +418,26 @@
         this.open = [];
         this.searchField = '';
 
-        this.forceRefresh();
-
         this.$store.commit('setItem', {});
         if (!this.navigationRight.mini) {
           this.toogleRight();
         }
         this.$store.commit('setTable', table);
-        this.$store.dispatch('loadItems');
+        this.$store.dispatch('loadItems')
+          .then(() => {
+
+            for (let i = 0; i < this.$store.state.headers.length; i++) {
+              this.itemscol[this.$store.state.headers[i].value] = [];
+            }
+
+            this.forceRefresh();
+
+            this.filter = {
+              'table': this.$store.state.type,
+              'columns': {}
+            };
+
+          });
 
       },
 
@@ -439,9 +481,6 @@
         let column = '';
         let type = this.$store.state.type;
 
-        this.filter = { 'table': type, 'columns': {} };
-        this.search = ''
-
         if (type === 'directory') {
           console.log('DIR');
           slash = '/';
@@ -449,21 +488,21 @@
         } else if (type === 'file') {
           console.log('FILE');
           slash = '/';
-          column = '`origin.path`';
+          column = 'origin.path';
         } else if (type === 'windows-registry-key') {
           console.log('KEY');
           slash = '\\';
-          column = '`key`';
+          column = 'key';
         } else {
           console.log('TABLE DOES NOT EXIST!');
         }
 
         if (e.length === 0) {
           this.filter['table'] = type;
-          this.filter['columns'][column] = '';
+          this.filter['columns'][column] = [];
         } else {
           this.filter['table'] = type;
-          this.filter['columns'][column] = e[0] + slash;
+          this.filter['columns'][column] = [e[0] + slash];
         }
 
         this.$store.commit('setFilter', this.filter);
@@ -471,22 +510,22 @@
       },
 
       searchFilter() {
-        console.log('search');
         this.filter['table'] = this.$store.state.type;
 
         let column = '';
 
-        if(this.searchField === 'origin') {
-          column = '`origin.path`';
-        }
-        else {
-          column = this.searchField;
+        for (const key in this.itemscol) {
+          const value = this.itemscol[key];
+          if (key === 'origin') {
+            column = 'origin.path';
+          } else {
+            column = key;
+          }
+          this.filter['columns'][column] = value;
         }
 
-        this.filter['columns'][column] = this.search;
         this.$store.commit('setFilter', this.filter);
         this.$store.dispatch('loadItems');
-        delete this.filter['columns'][column]
 
       },
 

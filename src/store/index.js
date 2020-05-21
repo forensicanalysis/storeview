@@ -137,7 +137,11 @@ export default new Vuex.Store({
       console.log(state.type)
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, function (value, column) {
-          url += '&filter[' + column + ']=' + encodeURI(value);
+
+          for (let i=0; i<value.length; i++) {
+            url += '&filter[' + column + ']=' + encodeURI(value[i]);
+          }
+
           console.log(url)
         });
       }
