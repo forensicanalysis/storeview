@@ -11,15 +11,15 @@ export const templates = {
       align: 'right'
     }, {
       text: 'Accessed',
-      value: 'accessed',
+      value: 'atime',
       align: 'right'
     }, {
       text: 'Modified',
-      value: 'modified',
+      value: 'mtime',
       align: 'right'
     }, {
       text: 'Created',
-      value: 'created',
+      value: 'ctime',
       align: 'right'
     }, {
       text: 'Origin Path',
@@ -34,7 +34,7 @@ export const templates = {
       value: 'key',
     }, {
       text: 'Modified',
-      value: 'modified',
+      value: 'modified_time',
       align: 'right'
     }]
   },
@@ -51,7 +51,7 @@ export const templates = {
     }, {
       text: 'Created',
       align: 'left',
-      value: 'created',
+      value: 'created_time',
     }, {
       text: 'Return Code',
       align: 'left',
@@ -69,15 +69,15 @@ export const templates = {
         align: 'right'
       }, {
         text: 'Accessed',
-        value: 'accessed',
+        value: 'atime',
         align: 'right'
       }, {
         text: 'Modified',
-        value: 'modified',
+        value: 'mtime',
         align: 'right'
       }, {
         text: 'Created',
-        value: 'created',
+        value: 'ctime',
         align: 'right'
       }
     ]

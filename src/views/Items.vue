@@ -45,7 +45,6 @@
             v-if="refresh"
             activatable
             hoverable
-            rounded
             dense
             transition
             @update:active="updatedir"
@@ -54,7 +53,7 @@
             :load-children="fetch"
             :open.sync="open"
             item-key="path"
-            color="warning"
+            color="primary"
             ref="treeView"
           >
             <template v-slot:prepend="{ item, open }">
@@ -100,7 +99,7 @@
       </v-row>
     </v-container>
 
-    <v-card class="mt-10" tile style="margin-top: 3px !important;">
+    <v-card class="mt-10" outlined style="margin-top: 3px !important;">
       <v-data-table
         :headers="$store.state.headers"
         :items="$store.state.items"
@@ -555,6 +554,10 @@
 <style>
   table tr td {
     cursor: pointer !important;
+  }
+
+  * {
+    border-radius: 0 !important;
   }
 
   .fade-enter-active, .fade-leave-active {
