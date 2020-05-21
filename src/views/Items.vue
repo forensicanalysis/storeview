@@ -41,8 +41,15 @@
             </v-list-item-icon>
           </v-list-item>
           <hr/>
+          <h2>Navigation</h2>
+          <v-icon
+            clickable
+            @click="getDirectories"
+            color="purple darken-2">
+            mdi-menu
+          </v-icon>
           <v-treeview
-            v-if="refresh"
+            v-if="refresh && showDirectories"
             activatable
             hoverable
             dense
@@ -113,11 +120,6 @@
         @click:row="select"
         :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       >
-
-        <template v-slot:top>
-          <v-icon @click="">mdi-search</v-icon>
-        </template>
-
         <template v-slot:body.prepend>
           <tr>
             <th v-for="h in $store.state.headers" role="columnheader" scope="col">
@@ -207,6 +209,8 @@
         itemscol: {},
         searchcol: {},
 
+        showDirectories: false,
+
         filter: {
           'table': this.$store.state.type,
           'columns': {}
@@ -272,13 +276,7 @@
       },
 
       directories() {
-        return [
-          {
-            path: '',
-            name: 'Navigation',
-            children: [],
-          }
-        ];
+        return [];
       },
 
     },
@@ -399,7 +397,41 @@
         });
       },
 
+      async getDirectories() {
+
+        if (this.directories.length === 0) {
+
+          let directories = [];
+
+          this.$store.dispatch('loadDirectories', { path: '' })
+            .then(response => {
+              for (let i = 0; i < response.length; i++) {
+                if (response[i].name !== '/') {
+                  directories.push(response[i]);
+                }
+              }
+            })
+            .catch(error => console.warn(error));
+
+          await pause(1000);
+
+          for (let i = 0; i < directories.length; i++) {
+            this.directories.push(directories[i]);
+          }
+
+          console.log("INITIAL: ",  JSON.stringify(this.directories, null, 1))
+          this.showDirectories = !this.showDirectories
+        }
+
+        else {
+          this.showDirectories = !this.showDirectories
+        }
+
+      },
+
       async loadList(table) {
+
+        this.showDirectories = false;
 
         while (this.directories.length !== 0) {
           this.directories.pop();
@@ -407,12 +439,6 @@
 
         this.itemscol = {};
         this.searchcol = {};
-
-        this.directories.push({
-          path: '',
-          name: 'Navigation',
-          children: [],
-        });
 
         this.active = [];
         this.open = [];
