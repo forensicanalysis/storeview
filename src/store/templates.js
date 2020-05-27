@@ -20,48 +20,48 @@
 // Author(s): Jonas Plum
 
 export const templates = {
-  'file': {
-    'icon': 'folder',
-    'headers': [{
+  file: {
+    icon: 'folder',
+    headers: [{
       text: 'Name',
       align: 'left',
       value: 'name',
     }, {
       text: 'Size',
       value: 'size',
-      align: 'right'
+      align: 'right',
     }, {
       text: 'Accessed',
       value: 'atime',
-      align: 'right'
+      align: 'right',
     }, {
       text: 'Modified',
       value: 'mtime',
-      align: 'right'
+      align: 'right',
     }, {
       text: 'Created',
       value: 'ctime',
-      align: 'right'
+      align: 'right',
     }, {
       text: 'Origin Path',
       value: 'origin',
     }],
   },
   'windows-registry-key': {
-    'icon': 'file-cabinet',
-    'headers': [{
+    icon: 'file-cabinet',
+    headers: [{
       text: 'Key',
       align: 'left',
       value: 'key',
     }, {
       text: 'Modified',
       value: 'modified_time',
-      align: 'right'
-    }]
+      align: 'right',
+    }],
   },
-  'process': {
-    'icon': 'console',
-    'headers': [{
+  process: {
+    icon: 'console',
+    headers: [{
       text: 'Name',
       align: 'left',
       value: 'name',
@@ -77,30 +77,30 @@ export const templates = {
       text: 'Return Code',
       align: 'left',
       value: 'return_code',
-    }]
+    }],
   },
-  'info': { 'icon': 'info' },
-  'report': { 'icon': 'file-alt' },
-  'directory': {
-    'icon': 'folder',
-    'headers': [
+  info: { icon: 'info' },
+  report: { icon: 'file-alt' },
+  directory: {
+    icon: 'folder',
+    headers: [
       {
         text: 'Path',
         value: 'path',
-        align: 'right'
+        align: 'right',
       }, {
         text: 'Accessed',
         value: 'atime',
-        align: 'right'
+        align: 'right',
       }, {
         text: 'Modified',
         value: 'mtime',
-        align: 'right'
+        align: 'right',
       }, {
         text: 'Created',
         value: 'ctime',
-        align: 'right'
-      }
-    ]
+        align: 'right',
+      },
+    ],
   },
 };

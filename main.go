@@ -178,11 +178,11 @@ func main() {
 			opt.Limit = limit
 			opt.Offset = offset
 
-			items, err := QueryStore(store, name, opt)
+			count, items, err := queryStore(store, name, opt)
 			if err != nil {
 				return err
 			}
-			return cobraserver.PrintJSONList(w, items)
+			return cobraserver.PrintJSONList(w, count, items)
 		},
 	}
 
@@ -317,8 +317,8 @@ func NewSelectOptions() *SelectOptions {
 	}
 }
 
-func QueryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) ([]forensicstore.JSONElement, error) {
-	q := "SELECT json FROM elements"
+func queryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) (int64, []forensicstore.JSONElement, error) {
+	q := ""
 
 	filters := []string{
 		fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType),
@@ -346,9 +346,29 @@ func QueryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 		}
 	}
 
+	c := "SELECT count(json) as count FROM elements" + q
+	conn := store.Connection()
+	stmt, err := conn.Prepare(c)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	_, err = stmt.Step()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	count := stmt.GetInt64("count")
+
+	err = stmt.Finalize()
+	if err != nil {
+		return 0, nil, err
+	}
+
 	q += fmt.Sprintf(" LIMIT %d", options.Limit)
 	q += fmt.Sprintf(" OFFSET %d", options.Offset)
 	q += ";"
 	fmt.Println(q)
-	return store.Query(q)
+	elements, err := store.Query("SELECT json FROM elements" + q)
+	return count, elements, err
 }

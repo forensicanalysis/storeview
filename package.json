@@ -60,7 +60,11 @@
       "plugin:vue/essential",
       "@vue/airbnb"
     ],
-    "rules": {},
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": "off",
+      "no-param-reassign": "off"
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }

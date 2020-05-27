@@ -4,7 +4,7 @@ const VuetifyLoaderPlugin = require('vuetify-loader/lib/plugin');
 
 module.exports = {
   plugins: [
-    new VuetifyLoaderPlugin()
+    new VuetifyLoaderPlugin(),
   ],
   rules: [
     {
@@ -25,7 +25,7 @@ module.exports = {
             implementation: require('sass'),
             sassOptions: {
               fiber: require('fibers'),
-              indentedSyntax: true // optional
+              indentedSyntax: true, // optional
             },
           },
         },

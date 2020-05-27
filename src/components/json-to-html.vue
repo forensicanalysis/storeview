@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <script type="text/jsx">
-  /* eslint-disable */
+/* eslint-disable */
   export default {
     name: "json-to-html",
     props: {

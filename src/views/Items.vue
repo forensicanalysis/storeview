@@ -1,25 +1,3 @@
-<!--
-Copyright (c) 2020 Siemens AG
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Author(s): Jonas Plum
--->
 <template>
   <div>
     <v-navigation-drawer
@@ -45,6 +23,7 @@ Author(s): Jonas Plum
         <v-icon>mdi-menu</v-icon>
       </v-btn>
       <v-list class="mt-6" dense>
+        <v-subheader>Type</v-subheader>
         <v-list-item-group v-model="itemTypeIndex" color="primary">
           <v-list-item
             v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
@@ -62,8 +41,9 @@ Author(s): Jonas Plum
               <span v-if="'count' in table">{{table['count']}}</span>
             </v-list-item-icon>
           </v-list-item>
-          <hr/>
+          <v-subheader>Location</v-subheader>
           <v-treeview
+            v-if="refresh && directories.length > 0"
             activatable
             hoverable
             dense
@@ -71,7 +51,7 @@ Author(s): Jonas Plum
             @update:active="updatedir"
             :active.sync="active"
             :items="directories"
-            :load-children="fetch"
+            :load-children="fetchTreeChildren"
             :open.sync="open"
             item-key="path"
             color="primary"
@@ -89,10 +69,9 @@ Author(s): Jonas Plum
     </v-navigation-drawer>
 
     <v-text-field
-      style="margin-top: 50px"
       v-model="search"
       :append-icon="'mdi-send'"
-      filled
+      outlined
       clear-icon="mdi-close-circle"
       clearable
       label="Search"
@@ -107,7 +86,7 @@ Author(s): Jonas Plum
         :items="$store.state.items"
         :loading="loading"
         :options.sync="options"
-        :server-items-length="count"
+        :server-items-length="$store.state.itemCount"
         @update:options="updateopt"
         dense
         :fixed-header="true"
@@ -115,14 +94,33 @@ Author(s): Jonas Plum
         @click:row="select"
         :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       >
-        <template v-slot:item.accessed="{ item }">
-          <div>{{ toLocal(item.accessed) }}</div>
+        <template v-slot:body.prepend>
+          <tr>
+            <th v-for="h in $store.state.headers" role="columnheader" scope="col">
+              <v-combobox
+                v-model.sync="itemscol[h.value]"
+                :search-input.sync="searchcol[h.value]"
+                multiple
+                small-chips
+                dense
+                hide-no-data
+                deletable-chips
+                clearable
+                @change="searchFilter"
+                append-icon=""
+              />
+            </th>
+          </tr>
         </template>
-        <template v-slot:item.modified="{ item }">
-          <div>{{ toLocal(item.modified) }}</div>
+
+        <template v-slot:item.atime="{ item }">
+          <div>{{ toLocal(item.atime) }}</div>
         </template>
-        <template v-slot:item.created="{ item }">
-          <div>{{ toLocal(item.created) }}</div>
+        <template v-slot:item.mtime="{ item }">
+          <div>{{ toLocal(item.mtime) }}</div>
+        </template>
+        <template v-slot:item.ctime="{ item }">
+          <div>{{ toLocal(item.ctime) }}</div>
         </template>
         <template v-slot:item.origin="{ item }">
           <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
@@ -164,330 +162,397 @@ Author(s): Jonas Plum
 </template>
 
 <script>
-  import JsonToHtml from '../components/json-to-html';
-  import item from '@/views/Document';
-  import { DateTime } from 'luxon';
+import { DateTime } from 'luxon';
+import item from '@/views/Document.vue';
 
-  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  export default {
+export default {
 
-    name: 'items',
+  name: 'items',
 
-    components: {
-      JsonToHtml,
-      item
+  components: {
+    item,
+  },
+
+  data() {
+    return {
+
+      itemscol: {},
+      searchcol: {},
+
+      filter: {
+        table: this.$store.state.type,
+        columns: {},
+      },
+
+      search: '',
+      active: [],
+      open: [],
+      refresh: true,
+
+      navigationLeft: {
+        mini: false,
+        shown: true,
+        width: 250,
+        oldWidth: 250,
+        borderSize: 3,
+      },
+
+      navigationRight: {
+        mini: true,
+        shown: true,
+        width: 56,
+        oldWidth: 500,
+        borderSize: 3,
+      },
+
+      itemTypeIndex: 0,
+      loading: false,
+      options: {},
+
+      directories: []
+    };
+  },
+
+  computed: {
+
+    count() {
+      for (let i = 0; i < this.$store.state.tables.length; i += 1) {
+        if (this.$store.state.type === this.$store.state.tables[i].name) {
+          console.log(this.$store.state.tables[i]);
+          return this.$store.state.tables[i].count;
+        }
+      }
+      return 0;
     },
 
-    data: function () {
-      return {
-
-        filter: {
-          'table': this.$store.state.type,
-          'columns': {}
-        },
-
-        search: '',
-        active: [],
-        open: [],
-
-        navigationLeft: {
-          mini: false,
-          shown: true,
-          width: 250,
-          oldWidth: 250,
-          borderSize: 3,
-        },
-
-        navigationRight: {
-          mini: true,
-          shown: true,
-          width: 56,
-          oldWidth: 500,
-          borderSize: 3,
-        },
-
-        itemTypeIndex: 0,
-        loading: false,
-        options: {},
-
-      };
-
+    directionLeft() {
+      return this.navigationLeft.shown === false ? 'Open' : 'Closed';
     },
 
-    computed: {
-
-      count: function () {
-        for (let i = 0; i < this.$store.state.tables.length; i++) {
-          if (this.$store.state.type === this.$store.state.tables[i]['name']) {
-            console.log(this.$store.state.tables[i])
-            return this.$store.state.tables[i]['count'];
-          }
-        }
-        return 0;
-      },
-
-      directionLeft() {
-        return this.navigationLeft.shown === false ? 'Open' : 'Closed';
-      },
-
-      directionRight() {
-        return this.navigationLeft.shown === false ? 'Open' : 'Closed';
-      },
-
-      paneSize: {
-        get() {
-          return this.$store.state.listPane;
-        },
-        set(value) {
-          this.$store.commit('setlistPane', value);
-        }
-      },
-
-      directories() {
-        return [
-          {
-            id: 0,
-            path: '',
-            name: 'Directories',
-            children: [],
-          }
-        ];
-      },
-
+    directionRight() {
+      return this.navigationLeft.shown === false ? 'Open' : 'Closed';
     },
 
-    methods: {
-
-      toggle(navigation) {
-        if (!navigation.mini) {
-          navigation.oldWidth = parseInt(navigation.width, 10);
-          navigation.width = 56;
-        }
-        navigation.mini = !navigation.mini;
-
-        if (!navigation.mini) {
-          navigation.width = parseInt(navigation.oldWidth, 10);
-        }
+    paneSize: {
+      get() {
+        return this.$store.state.listPane;
       },
-
-      toogleLeft() {
-        this.toggle(this.navigationLeft);
+      set(value) {
+        this.$store.commit('setlistPane', value);
       },
+    },
 
-      toogleRight() {
-        this.toggle(this.navigationRight);
-      },
+  },
 
-      setBorderWidthLeft() {
-        let i = this.$refs.drawerLeft.$el.querySelector(
-          '.v-navigation-drawer__border'
-        );
-        i.style.width = this.navigationLeft.borderSize + 'px';
-        i.style.cursor = 'ew-resize';
-      },
+  methods: {
 
-      setBorderWidthRight() {
-        let i = this.$refs.drawerRight.$el.querySelector(
-          '.v-navigation-drawer__border'
-        );
-        i.style.width = this.navigationRight.borderSize + 'px';
-        i.style.cursor = 'ew-resize';
-      },
+    toggle(navigation) {
+      if (!navigation.mini) {
+        navigation.oldWidth = parseInt(navigation.width, 10);
+        navigation.width = 56;
+      }
+      navigation.mini = !navigation.mini;
 
-      setEventsAll() {
-        this.setEvents(this.$refs.drawerLeft.$el, this.navigationLeft);
-        this.setEvents(this.$refs.drawerRight.$el, this.navigationRight);
-      },
+      if (!navigation.mini) {
+        navigation.width = parseInt(navigation.oldWidth, 10);
+      }
+    },
 
-      setEvents(el, navigation) {
-        const minSize = navigation.borderSize;
-        const drawerBorder = el.querySelector('.v-navigation-drawer__border');
-        const direction = el.classList.contains('v-navigation-drawer--right')
-          ? 'right'
-          : 'left';
+    toogleLeft() {
+      this.toggle(this.navigationLeft);
+    },
 
-        function resize(e) {
-          document.body.style.cursor = 'ew-resize';
-          let f = direction === 'right'
-            ? document.body.scrollWidth - e.clientX
-            : e.clientX;
-          el.style.width = f + 'px';
-        }
+    toogleRight() {
+      this.toggle(this.navigationRight);
+    },
 
-        drawerBorder.addEventListener(
-          'mousedown',
-          function (e) {
-            if (e.offsetX < minSize) {
-              // m_pos = e.x;
-              if (navigation.mini) {
-                return false;
-              }
+    setBorderWidthLeft() {
+      const i = this.$refs.drawerLeft.$el.querySelector(
+        '.v-navigation-drawer__border',
+      );
+      i.style.width = `${this.navigationLeft.borderSize}px`;
+      i.style.cursor = 'ew-resize';
+    },
 
-              el.style.transition = 'initial';
-              document.addEventListener('mousemove', resize, false);
+    setBorderWidthRight() {
+      const i = this.$refs.drawerRight.$el.querySelector(
+        '.v-navigation-drawer__border',
+      );
+      i.style.width = `${this.navigationRight.borderSize}px`;
+      i.style.cursor = 'ew-resize';
+    },
+
+    setEventsAll() {
+      this.setEvents(this.$refs.drawerLeft.$el, this.navigationLeft);
+      this.setEvents(this.$refs.drawerRight.$el, this.navigationRight);
+    },
+
+    setEvents(el, navigation) {
+      const minSize = navigation.borderSize;
+      const drawerBorder = el.querySelector('.v-navigation-drawer__border');
+      const direction = el.classList.contains('v-navigation-drawer--right')
+        ? 'right'
+        : 'left';
+
+      function resize(e) {
+        document.body.style.cursor = 'ew-resize';
+        const f = direction === 'right'
+          ? document.body.scrollWidth - e.clientX
+          : e.clientX;
+        el.style.width = `${f}px`;
+      }
+
+      drawerBorder.addEventListener(
+        'mousedown',
+        (e) => {
+          if (e.offsetX < minSize) {
+            // m_pos = e.x;
+            if (navigation.mini) {
+              return false;
             }
-          },
-          false
-        );
 
-        document.addEventListener(
-          'mouseup',
-          function () {
-            el.style.transition = '';
-            navigation.width = el.style.width;
+            el.style.transition = 'initial';
+            document.addEventListener('mousemove', resize, false);
+          }
+        },
+        false,
+      );
 
-            /*  console.log(el.style.width);
+      document.addEventListener(
+        'mouseup',
+        () => {
+          el.style.transition = '';
+          navigation.width = el.style.width;
+
+          /*  console.log(el.style.width);
             if (parseInt(el.style.width, 10) > 80) {
               console.log('false');
               navigation.mini = false;
             } */
 
-            document.body.style.cursor = '';
-            document.removeEventListener('mousemove', resize, false);
-          },
-          false
-        );
-      },
+          document.body.style.cursor = '';
+          document.removeEventListener('mousemove', resize, false);
+        },
+        false,
+      );
+    },
 
-      humanBytes(bytes, si) {
-        let thresh = si ? 1000 : 1024;
-        if (Math.abs(bytes) < thresh) {
-          return bytes + 'B';
-        }
-        let units = si
-          ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-          : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-        let u = -1;
-        do {
-          bytes /= thresh;
-          ++u;
-        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-        return bytes.toFixed(1) + '' + units[u];
-      },
+    humanBytes(bytes, si) {
+      const thresh = si ? 1000 : 1024;
+      if (Math.abs(bytes) < thresh) {
+        return `${bytes}B`;
+      }
+      const units = si
+        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+      let u = -1;
+      do {
+        bytes /= thresh;
+        u += 1;
+      } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+      return `${bytes.toFixed(1)}${units[u]}`;
+    },
 
-      loadList(table) {
-        this.$store.commit('setItem', {});
-        if (!this.navigationRight.mini) {
-          this.toogleRight();
-        }
-        this.$store.commit('setTable', table);
-        this.$store.dispatch('loadItems');
-      },
+    forceRefresh() {
+      this.refresh = false;
+      this.$nextTick(() => {
+        this.refresh = true;
+      });
+    },
 
-      select(e) {
-        this.$store.commit('setItem', e);
-        if (this.navigationRight.mini) {
-          this.toogleRight();
-        }
-      },
+    async getDirectories() {
+      var that = this;
+      if (this.directories.length === 0) {
 
-      toLocal(s) {
-        return DateTime.fromISO(s)
-          .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
-      },
-
-      updateopt(e) {
-        console.log('updateopt', e);
-        this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
-        this.$store.commit('setLimit', e.itemsPerPage);
-        let sort = {
-          'table': this.$store.state.type,
-          'columns': {}
-        };
-        for (let i = 0; i < e.sortBy.length; i++) {
-          if (e.sortDesc[i]) {
-            sort['columns'][e.sortBy[i]] = 'DESC';
-          } else {
-            sort['columns'][e.sortBy[i]] = 'ASC';
-          }
-        }
-
-        this.$store.commit('setSort', sort);
-        this.$store.dispatch('loadItems');
-      },
-
-      updatedir(e) {
-        console.log('updatedir', e);
-
-        if(e.length === 0) {
-          this.filter['table'] = this.$store.state.type
-          this.filter['columns']['`origin.path`'] = '';
-        }
-
-        else {
-          this.filter['table'] = this.$store.state.type
-          this.filter['columns']['`origin.path`'] = e[0] + '/';
-        }
-
-        this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems');
-      },
-
-      searchFilter() {
-        console.log('search');
-        this.filter['table'] = this.$store.state.type
-
-        this.filter['columns']['name'] = this.search;
-
-        this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems');
-
-      },
-
-      clearFilter () {
-        this.search = ''
-        this.searchFilter()
-      },
-
-      async fetch(item) {
-
-        let directories = []
-
-        this.$store.dispatch('loadDirectories', { path: item.path })
-          .then(response => {
-            if ((response.length === 1) && (response[0].name === '/')) {
-              delete item.children;
-            } else {
-              for (let i = 0; i < response.length; i++) {
-                if (response[i].name !== '/') {
-                  directories.push(response[i]);
-                }
+        this.$store.dispatch('loadDirectories', { path: '' })
+          .then((response) => {
+            for (let i = 0; i < response.length; i += 1) {
+              if (response[i].name !== '/') {
+                that.directories.push(response[i]);
               }
             }
           })
           .catch(error => console.warn(error));
 
-        await pause(1000)
-
-        const key = item.path
-        const parentNode = this.$refs.treeView.nodes[key]
-
-        let childNode;
-        directories.forEach((child) => {
-          childNode = {...parentNode, item: child, vnode: null}
-          this.$refs.treeView.nodes[child.path] = childNode
-        })
-
-        for (let i = 0; i < directories.length; i++) {
-            item.children.push(directories[i]);
-        }
-
-      },
-
+        console.log('INITIAL: ', JSON.stringify(this.directories, null, 1));
+      }
     },
 
-    mounted() {
-      this.setBorderWidthLeft();
-      this.setBorderWidthRight();
-      this.setEventsAll();
-    },
+    async loadList(table) {
+      this.directories = [];
 
-    destroyed() {
+      this.itemscol = {};
+      this.searchcol = {};
+
+      this.active = [];
+      this.open = [];
+
       this.$store.commit('setItem', {});
-    }
+      if (!this.navigationRight.mini) {
+        this.toogleRight();
+      }
+      this.$store.commit('setTable', table);
+      this.$store.dispatch('loadItems')
+        .then(() => {
+          for (let i = 0; i < this.$store.state.headers.length; i += 1) {
+            this.itemscol[this.$store.state.headers[i].value] = [];
+          }
 
-  };
+          this.getDirectories();
+          this.forceRefresh();
+
+          this.filter = {
+            table: this.$store.state.type,
+            columns: {},
+          };
+        });
+    },
+
+    select(e) {
+      this.$store.commit('setItem', e);
+      if (this.navigationRight.mini) {
+        this.toogleRight();
+      }
+    },
+
+    toLocal(s) {
+      return DateTime.fromISO(s)
+        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
+    },
+
+    updateopt(e) {
+      console.log('updateopt', e);
+      this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
+      this.$store.commit('setLimit', e.itemsPerPage);
+      const sort = {
+        table: this.$store.state.type,
+        columns: {},
+      };
+      for (let i = 0; i < e.sortBy.length; i += 1) {
+        if (e.sortDesc[i]) {
+          sort.columns[e.sortBy[i]] = 'DESC';
+        } else {
+          sort.columns[e.sortBy[i]] = 'ASC';
+        }
+      }
+
+      this.$store.commit('setSort', sort);
+      this.$store.dispatch('loadItems');
+    },
+
+    updatedir(e) {
+      console.log('updatedir', e);
+      console.log(JSON.stringify(this.directories, null, 1));
+
+      let slash = '';
+      let column = '';
+      const { type } = this.$store.state;
+
+      if (type === 'directory') {
+        console.log('DIR');
+        slash = '/';
+        column = 'path';
+      } else if (type === 'file') {
+        console.log('FILE');
+        slash = '/';
+        column = 'origin.path';
+      } else if (type === 'windows-registry-key') {
+        console.log('KEY');
+        slash = '\\';
+        column = 'key';
+      } else {
+        console.log('TABLE DOES NOT EXIST!');
+      }
+
+      if (e.length === 0) {
+        this.filter.table = type;
+        this.filter.columns[column] = [];
+      } else {
+        this.filter.table = type;
+        this.filter.columns[column] = [e[0] + slash];
+      }
+
+      this.$store.commit('setFilter', this.filter);
+      this.$store.dispatch('loadItems');
+    },
+
+    searchFilter() {
+      this.filter.table = this.$store.state.type;
+
+      let column = '';
+
+      for (const key in this.itemscol) {
+        const value = this.itemscol[key];
+        if (key === 'origin') {
+          column = 'origin.path';
+        } else {
+          column = key;
+        }
+        this.filter.columns[column] = value;
+      }
+
+      this.$store.commit('setFilter', this.filter);
+      this.$store.dispatch('loadItems');
+    },
+
+    clearFilter() {
+      this.search = '';
+      this.searchFilter();
+    },
+
+    async fetchTreeChildren(item) {
+      const directories = [];
+
+      this.$store.dispatch('loadDirectories', { path: item.path })
+        .then((response) => {
+          if ((response.length === 1) && (response[0].name === '/')) {
+            delete item.children;
+          } else {
+            for (let i = 0; i < response.length; i += 1) {
+              if (response[i].name !== '/') {
+                directories.push(response[i]);
+              }
+            }
+          }
+        })
+        .catch(error => console.warn(error));
+
+      await pause(1000);
+
+      const key = item.path;
+      const parentNode = this.$refs.treeView.nodes[key];
+
+      let childNode;
+      directories.forEach((child) => {
+        childNode = {
+          ...parentNode,
+          item: child,
+          vnode: null,
+        };
+        this.$refs.treeView.nodes[child.path] = childNode;
+      });
+
+      for (let i = 0; i < directories.length; i += 1) {
+        item.children.push(directories[i]);
+      }
+    },
+
+  },
+
+  mounted() {
+    this.setBorderWidthLeft();
+    this.setBorderWidthRight();
+    this.setEventsAll();
+    this.getDirectories();
+  },
+
+  destroyed() {
+    this.$store.commit('setItem', {});
+  },
+
+};
 
 
 </script>
@@ -508,5 +573,9 @@ Author(s): Jonas Plum
   .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
   {
     opacity: 0;
+  }
+
+  .v-treeview-node__label {
+    font-size: 0.8125rem;
   }
 </style>
