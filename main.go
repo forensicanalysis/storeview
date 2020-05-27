@@ -327,7 +327,11 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 	if len(options.Filter) > 0 {
 		for column, filtering := range options.Filter {
 			if filtering != "" {
-				filters = append(filters, fmt.Sprintf("json_extract(json, '$.%s') LIKE '%%%s%%'", column, filtering))
+				if column == "elements" {
+					filters = append(filters, fmt.Sprintf("%s MATCH '%s'", column, filtering))
+				} else {
+					filters = append(filters, fmt.Sprintf("json_extract(json, '$.%s') LIKE '%%%s%%'", column, filtering))
+				}
 			}
 		}
 	}
@@ -368,7 +372,7 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 	q += fmt.Sprintf(" LIMIT %d", options.Limit)
 	q += fmt.Sprintf(" OFFSET %d", options.Offset)
 	q += ";"
-	fmt.Println(q)
+	fmt.Println("SELECT json FROM elements" + q)
 	elements, err := store.Query("SELECT json FROM elements" + q)
 	return count, elements, err
 }
