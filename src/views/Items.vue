@@ -2,29 +2,19 @@
   <div>
     <v-navigation-drawer
       app
-      clipped
       stateless
       :width="navigationLeft.width"
       v-model="navigationLeft.shown"
       ref="drawerLeft"
       style="overflow: visible"
+      color="sidebar"
+      dark
+      clipped
+      class="elevation-3"
     >
-      <v-btn
-        color="pink"
-        fab
-        dark
-        small
-        absolute
-        top
-        right
-        @click="toogleLeft"
-        style="margin-top: 25px; margin-right: -35px;"
-      >
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
       <v-list class="mt-6" dense>
         <v-subheader>Type</v-subheader>
-        <v-list-item-group v-model="itemTypeIndex" color="primary">
+        <v-list-item-group v-model="itemTypeIndex" color="secondary">
           <v-list-item
             v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
             :key="i"
@@ -54,7 +44,7 @@
             :load-children="fetchTreeChildren"
             :open.sync="open"
             item-key="path"
-            color="primary"
+            color="secondary"
             ref="treeView"
           >
             <template v-slot:prepend="{ item, open }">
@@ -66,6 +56,16 @@
           </v-treeview>
         </v-list-item-group>
       </v-list>
+      <template v-slot:append>
+        <v-btn
+          dark
+          small
+          block
+          @click="toogleLeft"
+        >
+          <v-icon>mdi-menu</v-icon>
+        </v-btn>
+      </template>
     </v-navigation-drawer>
 
     <v-text-field
@@ -74,6 +74,7 @@
       outlined
       clear-icon="mdi-close-circle"
       clearable
+      color="#fff"
       label="Search"
       type="text"
       @keyup.enter.native="searchFilter"
@@ -128,31 +129,31 @@
     </v-card>
     <v-navigation-drawer
       app
-      clipped
       right
       stateless
+      color="sidebar"
+      clipped
+      dark
       :width="navigationRight.width"
       v-model="navigationRight.shown"
       ref="drawerRight"
       style="overflow: visible;"
+      class="elevation-3"
     >
-      <v-btn
-        v-if="!_.isEmpty($store.state.item)"
-        color="pink"
-        fab
-        dark
-        small
-        absolute
-        top
-        left
-        @click="toogleRight"
-        style="margin-top: 25px; margin-left: -35px;"
-      >
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
       <transition name="fade">
         <item v-show="!navigationRight.mini" :content="$store.state.item"/>
       </transition>
+      <template v-slot:append>
+        <v-btn
+          v-if="!_.isEmpty($store.state.item)"
+          dark
+          small
+          block
+          @click="toogleRight"
+        >
+          <v-icon>mdi-menu</v-icon>
+        </v-btn>
+      </template>
     </v-navigation-drawer>
   </div>
 </template>

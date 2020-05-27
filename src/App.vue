@@ -21,15 +21,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <v-app>
-    <v-app-bar app color="primary" dark clipped-right clipped-left flat>
+  <v-app :style="{background: $vuetify.theme.themes[theme].background}">
+    <v-app-bar app color="appbar" clipped-right clipped-left>
       <v-toolbar-title class="mr-8">Elementary</v-toolbar-title>
-      <!--v-spacer/-->
       <v-toolbar-items>
         <v-btn v-for="(name, route) in menu" :key="name" @click="$router.push(route)" text>
           {{name}}
         </v-btn>
       </v-toolbar-items>
+      <v-spacer></v-spacer>
+      <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+        <v-icon>mdi-invert-colors</v-icon>
+      </v-btn>
     </v-app-bar>
     <v-content>
       <v-container fluid>
@@ -40,6 +43,7 @@ Author(s): Jonas Plum
 </template>
 
 <script>
+import Vuetify from './plugins/vuetify.js'
 
 export default {
   name: 'app',
@@ -48,10 +52,15 @@ export default {
     return {
       drawer: {},
       menu: {
-        items: 'Items',
+        items: 'Elements',
         // 'workflows': 'Workflows',
       },
     };
+  },
+  computed: {
+    theme(){
+      return (Vuetify.framework.theme.dark) ? 'dark' : 'light'
+    }
   },
   created() {
     this.$store.dispatch('created');
@@ -62,15 +71,24 @@ export default {
 <style>
   body {
     font-family: 'Roboto', sans-serif;
+    background-color: #B0BEC5;
   }
 
-  h1, h2, h3, .v-toolbar {
-    font-family: 'Roboto Slab', serif;
+  h1, h2, h3, .v-toolbar, .title {
+    font-family: 'Roboto-Slab', serif;
   }
 
   .v-btn--fab {
     border-radius: 0;
-    border-radius: 0;
+  }
+
+  .v-toolbar__content {
+    /* border-bottom: 1px solid #B0BEC5; */
+  }
+
+  .theme--dark.v-list-item--active:hover::before, .theme--dark.v-list-item--active::before,
+  .theme--dark.v-treeview .v-treeview-node__root.v-treeview-node--active:hover::before, .theme--dark.v-treeview .v-treeview-node__root.v-treeview-node--active::before {
+    opacity: 0;
   }
 
   dt {
