@@ -76,6 +76,7 @@
       clearable
       label="Search"
       type="text"
+      @keyup.enter.native="searchFilter"
       @click:append="searchFilter"
       @click:clear="clearFilter"
     ></v-text-field>
@@ -96,20 +97,15 @@
       >
         <template v-slot:body.prepend>
           <tr>
-            <th v-for="h in $store.state.headers" role="columnheader" scope="col">
-              <v-combobox
-                v-model.sync="itemscol[h.value]"
-                :search-input.sync="searchcol[h.value]"
-                multiple
-                small-chips
+            <td v-for="h in $store.state.headers" :key="h.text" role="columnheader" scope="col">
+              <v-text-field
+                v-model="itemscol[h.value]"
+                @keyup.enter.native="searchFilter"
+                hide-details
+                label="Filter"
                 dense
-                hide-no-data
-                deletable-chips
-                clearable
-                @change="searchFilter"
-                append-icon=""
               />
-            </th>
+            </td>
           </tr>
         </template>
 
@@ -179,7 +175,6 @@ export default {
     return {
 
       itemscol: {},
-      searchcol: {},
 
       filter: {
         table: this.$store.state.type,
@@ -384,7 +379,6 @@ export default {
       this.directories = [];
 
       this.itemscol = {};
-      this.searchcol = {};
 
       this.active = [];
       this.open = [];
@@ -397,7 +391,7 @@ export default {
       this.$store.dispatch('loadItems')
         .then(() => {
           for (let i = 0; i < this.$store.state.headers.length; i += 1) {
-            this.itemscol[this.$store.state.headers[i].value] = [];
+            this.itemscol[this.$store.state.headers[i].value] = "";
           }
 
           this.getDirectories();
@@ -490,9 +484,10 @@ export default {
         } else {
           column = key;
         }
-        this.filter.columns[column] = value;
+        this.filter.columns[column] = [value];
       }
 
+      this.filter.columns['elements'] = [this.search];
       this.$store.commit('setFilter', this.filter);
       this.$store.dispatch('loadItems');
     },
@@ -575,7 +570,15 @@ export default {
     opacity: 0;
   }
 
-  .v-treeview-node__label {
+  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label {
     font-size: 0.8125rem;
+  }
+
+  .v-data-table .v-label--active {
+    opacity: 0;
+  }
+
+  .v-data-table .v-text-field>.v-input__control>.v-input__slot:before {
+    border-style: none;
   }
 </style>
