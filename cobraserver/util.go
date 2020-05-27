@@ -23,6 +23,7 @@ package cobraserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/forensicanalysis/forensicstore"
 	"io"
 )
@@ -36,8 +37,8 @@ func PrintAny(w io.Writer, i interface{}) error {
 	return PrintJSON(w, b)
 }
 
-func PrintJSONList(w io.Writer, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte("["))
+func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
+	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
 	if err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func PrintJSONList(w io.Writer, elements []forensicstore.JSONElement) error {
 		}
 	}
 
-	_, err = w.Write([]byte("]\n"))
+	_, err = w.Write([]byte("]}\n"))
 	return err
 }
 

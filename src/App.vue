@@ -41,22 +41,22 @@ Author(s): Jonas Plum
 
 <script>
 
-  export default {
-    name: 'app',
-    components: {},
-    data: function () {
-      return {
-        drawer: {},
-        menu: {
-          'items': 'Items',
-          // 'workflows': 'Workflows',
-        }
-      };
-    },
-    created() {
-      this.$store.dispatch('created');
-    }
-  };
+export default {
+  name: 'app',
+  components: {},
+  data() {
+    return {
+      drawer: {},
+      menu: {
+        items: 'Items',
+        // 'workflows': 'Workflows',
+      },
+    };
+  },
+  created() {
+    this.$store.dispatch('created');
+  },
+};
 </script>
 
 <style>

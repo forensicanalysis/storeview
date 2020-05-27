@@ -69,63 +69,62 @@ Author(s): Jonas Plum
 </template>
 
 <script>
-  import JsonToHtml from '@/components/json-to-html';
-  import pdf from 'vue-pdf';
-  import { component as VueCodeHighlight } from 'vue-code-highlight';
-  // import hexyjs from 'hexyjs';
+import pdf from 'vue-pdf';
+// import { component as VueCodeHighlight } from 'vue-code-highlight';
+// import JsonToHtml from '@/components/json-to-html';
+// import hexyjs from 'hexyjs';
 
-  export default {
-    name: 'file',
-    components: {
-      JsonToHtml,
-      pdf,
-      VueCodeHighlight,
+export default {
+  name: 'file',
+  components: {
+    // JsonToHtml,
+    pdf,
+    // VueCodeHighlight,
+  },
+  data() {
+    return {
+      path: '',
+      tab: null,
+      data: null,
+      hex: '0000',
+      active: 'Info',
+      loaded: false,
+    };
+  },
+  watch: {
+    path() {
+      const vm = this;
+      this.$http.get(`http://localhost:8081/api/file?path=${this.path}`)
+        .then((response) => {
+          // vm.hex = hexyjs.strToHex(response.data);
+          vm.data = response.data;
+        });
     },
-    data: function () {
-      return {
-        'path': '',
-        'tab': null,
-        'data': null,
-        'hex': '0000',
-        'active': 'Info',
-        'loaded': false,
-      };
-    },
-    watch: {
-      path: function () {
-        let vm = this;
-        this.$http.get('http://localhost:8081/api/file?path=' + this.path)
-          .then(response => {
-            // vm.hex = hexyjs.strToHex(response.data);
-            vm.data = response.data;
-          });
-      }
-    },
-    props: {
-      /* future_path: {
+  },
+  props: {
+    /* future_path: {
         type: Object,
         required: true,
       }, */
-    },
-    mounted() {
-      this.path = 'WindowsRecycleBin/$I9F219A.jpg';
-    },
-    methods: {
-      hasEnding(path, endings) {
-        for (let i = 0; i < endings.length; i++) {
-          if (_.endsWith(path, '.' + endings[i])) {
-            return true;
-          }
+  },
+  mounted() {
+    this.path = 'WindowsRecycleBin/$I9F219A.jpg';
+  },
+  methods: {
+    hasEnding(path, endings) {
+      for (let i = 0; i < endings.length; i += 1) {
+        if (Vue._.endsWith(path, `.${endings[i]}`)) {
+          return true;
         }
-        return false;
-      },
-      isImagePath(path) {
-        return this.hasEnding(path, ['jpg', 'jpeg', 'png', 'svg']);
-      },
-      isTextPath(path) {
-        return this.hasEnding(path, ['txt', 'md']);
       }
-    }
-  };
+      return false;
+    },
+    isImagePath(path) {
+      return this.hasEnding(path, ['jpg', 'jpeg', 'png', 'svg']);
+    },
+    isTextPath(path) {
+      return this.hasEnding(path, ['txt', 'md']);
+    },
+  },
+};
 </script>
-

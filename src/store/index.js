@@ -33,33 +33,32 @@ export default new Vuex.Store({
 
     type: 'file',
     items: [],
+    itemCount: 0,
     all: [],
     header: [],
     sort: {
       table: '',
-      columns: {}
+      columns: {},
     },
     filter: {
       table: '',
-      columns: {}
+      columns: {},
     },
     limit: 30,
     offset: 0,
-    templates: templates,
+    templates,
 
     item: {},
     listPane: 80,
 
     tasks: {
-      'fetch': {},
-      'unpack': { 'requires': ['fetch'] },
-      'plaso': { 'requires': ['unpack'] },
-      'hash': { 'requires': ['unpack'] },
-      'compare': { 'requires': ['hash'] },
-      'alert': { 'requires': ['plaso', 'compare'] },
+      fetch: {},
+      unpack: { requires: ['fetch'] },
+      plaso: { requires: ['unpack'] },
+      hash: { requires: ['unpack'] },
+      compare: { requires: ['hash'] },
+      alert: { requires: ['plaso', 'compare'] },
     },
-
-    id: 1,
 
   },
 
@@ -76,11 +75,11 @@ export default new Vuex.Store({
     setTable(state, data) {
       state.sort = {
         table: '',
-        columns: {}
+        columns: {},
       };
       state.filter = {
         table: '',
-        columns: {}
+        columns: {},
       };
       state.type = data;
     },
@@ -90,24 +89,22 @@ export default new Vuex.Store({
     },
 
     setItems(state, data) {
-      let calcHeaders = function () {
-        let headers = [];
-        let keys = _.keys(data[0]);
-        for (let i = 0; i < keys.length; i++) {
+      const calcHeaders = function () {
+        const headers = [];
+        const keys = Vue._.keys(data[0]);
+        for (let i = 0; i < keys.length; i += 1) {
           headers.push({
             text: Vue._.startCase(keys[i]),
-            value: keys[i]
+            value: keys[i],
           });
         }
         return headers;
       };
 
-      if (data.length === 0) {
-
-      } else if ('type' in data[0]) {
-        state.type = data[0]['type'];
-        if (data[0]['type'] in state.templates && 'headers' in state.templates[data[0]['type']]) {
-          state.headers = state.templates[data[0]['type']]['headers'];
+      if (data.length !== 0 && 'type' in data[0]) {
+        state.type = data[0].type;
+        if (data[0].type in state.templates && 'headers' in state.templates[data[0].type]) {
+          state.headers = state.templates[data[0].type].headers;
         } else {
           state.headers = calcHeaders();
         }
@@ -120,13 +117,15 @@ export default new Vuex.Store({
       console.log(state.items.length);
     },
 
+    setItemCount(state, data) {
+      state.itemCount = data;
+    },
+
     setItem(state, data) {
       if (Vue._.isEmpty(data)) {
         state.listPane = 80;
-      } else {
-        if (state.listPane >= 99.9) {
-          state.listPane = 50;
-        }
+      } else if (state.listPane >= 99.9) {
+        state.listPane = 50;
       }
       state.item = data;
     },
@@ -147,76 +146,105 @@ export default new Vuex.Store({
   actions: {
 
     created({ commit, dispatch, state }) {
-      invoke('GET', '/tables', [], function (tables) {
+      invoke('GET', '/tables', [], (tables) => {
         commit('setTables', tables);
       });
 
       dispatch('loadItems');
-
     },
 
     loadItems({ commit, state }) {
-      let url = '/items?type=' + state.type;
+      let url = `/items?type=${state.type}`;
+      console.log(state.type);
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
-        Vue._.forEach(state.filter.columns, function (value, column) {
-          url += '&filter[' + column + ']=' + encodeURI(value);
-          console.log(url)
+        Vue._.forEach(state.filter.columns, (value, column) => {
+          for (let i = 0; i < value.length; i += 1) {
+            url += `&filter[${column}]=${encodeURI(value[i])}`;
+          }
+          console.log(url);
         });
       }
       if (!Vue._.isEmpty(state.sort) && state.sort.type !== '' && !Vue._.isEmpty(state.sort.columns)) {
-        Vue._.forEach(state.sort.columns, function (value, column) {
+        Vue._.forEach(state.sort.columns, (value, column) => {
           let direction = '';
           switch (value) {
             case 'ASC':
               direction = 'ASC';
               break;
             case 'DESC':
+            default:
               direction = 'DESC';
           }
           if (direction !== '') {
-            url += '&sort[' + column + ']=' + direction;
+            url += `&sort[${column}]=${direction}`;
           }
         });
       }
 
-      url += '&offset=' + state.offset;
-      url += '&limit=' + state.limit;
+      url += `&offset=${state.offset}`;
+      url += `&limit=${state.limit}`;
 
       console.log(url);
 
-      invoke('GET', url, [], function (items) {
-        console.log(items)
-        commit('setItems', items);
+      invoke('GET', url, [], (items) => {
+        console.log(items);
+        commit('setItems', items.elements);
+        commit('setItemCount', items.count);
       });
-
     },
 
     loadDirectories({ commit, state }, payload) {
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
+        const directories = [];
 
-        let directories = []
+        let slash = '';
+        let url = '';
 
-        let url = '/tree?directory=' + payload.path + '/';
+        if (state.type === 'directory') {
+          slash = '/';
+        } else if (state.type === 'file') {
+          slash = '/';
+        } else if (state.type === 'windows-registry-key') {
+          slash = '\\';
+        } else {
+          console.log('TABLE DOES NOT EXIST!');
+        }
 
-        invoke('GET', url, [], function (data) {
-          return
-        }).then(response => {
+        if ((state.type === 'windows-registry-key') && (payload.path === '')) {
+          url = `/tree?directory=${payload.path}`;
+        } else {
+          url = `/tree?directory=${payload.path}${slash}`;
+        }
 
-          for (let i = 0; i < response.length; i++) {
-            directories.push(
-              {
-                id: state.id,
-                path: payload.path + '/' + response[i],
-                name: response[i],
-                children: []
-              }
-            );
-            state.id += 1;
-            resolve(directories)
+        url += `&type=${state.type}`;
+
+        // url = '/tree?directory=/C/&type=directory'
+        console.log('***************\n', url);
+
+        invoke('GET', url, [], (data) => {
+          console.log(data);
+        }).then((response) => {
+          for (let i = 0; i < response.length; i += 1) {
+            if ((state.type === 'windows-registry-key') && (payload.path === '')) {
+              directories.push(
+                {
+                  path: response[i],
+                  name: response[i],
+                  children: [],
+                },
+              );
+            } else {
+              directories.push(
+                {
+                  path: payload.path + slash + response[i],
+                  name: response[i],
+                  children: [],
+                },
+              );
+            }
+            resolve(directories);
           }
-
-        })
-
+        });
       });
     },
 

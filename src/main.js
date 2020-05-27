@@ -20,10 +20,10 @@
 // Author(s): Jonas Plum
 
 import Vue from 'vue';
-import vuetify from './plugins/vuetify';
 import axios from 'axios';
 import VueAxios from 'vue-axios';
 import VueLodash from 'vue-lodash';
+import vuetify from './plugins/vuetify';
 
 
 import App from './App.vue';
