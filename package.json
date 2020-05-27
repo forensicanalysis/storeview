@@ -63,7 +63,8 @@
     "rules": {
       "no-console": "off",
       "no-unused-vars": "off",
-      "no-param-reassign": "off"
+      "no-param-reassign": "off",
+      "import/extensions": "off"
     },
     "parserOptions": {
       "parser": "babel-eslint"

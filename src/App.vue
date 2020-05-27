@@ -22,50 +22,59 @@ Author(s): Jonas Plum
 -->
 <template>
   <v-app :style="{background: $vuetify.theme.themes[theme].background}">
-    <v-app-bar app color="appbar" clipped-right clipped-left>
-      <v-toolbar-title class="mr-8">Elementary</v-toolbar-title>
-      <v-toolbar-items>
-        <v-btn v-for="(name, route) in menu" :key="name" @click="$router.push(route)" text>
-          {{name}}
-        </v-btn>
-      </v-toolbar-items>
+    <v-app-bar color="sidebar" dark app flat dense hide-on-scroll>
+      <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
       <v-spacer></v-spacer>
+      <!--v-toolbar-title class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
+      <v-spacer></v-spacer-->
+      <!--v-toolbar-items>
+        <v-btn class="primary--text" text>Cases</v-btn>
+        <v-btn text>Upload</v-btn>
+      </v-toolbar-items-->
       <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
         <v-icon>mdi-invert-colors</v-icon>
       </v-btn>
     </v-app-bar>
     <v-content>
-      <v-container fluid>
-        <router-view/>
-      </v-container>
+      <v-toolbar color="appbar" dense class="elevation-1">
+        <v-toolbar-items>
+          <v-btn v-for="(name, route) in menu" :key="name" @click="$router.push(route)"
+                 :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+            {{name}}
+          </v-btn>
+        </v-toolbar-items>
+      </v-toolbar>
+      <router-view/>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import Vuetify from './plugins/vuetify.js'
+  import Vuetify from './plugins/vuetify.js'
 
-export default {
-  name: 'app',
-  components: {},
-  data() {
-    return {
-      drawer: {},
-      menu: {
-        items: 'Elements',
-        // 'workflows': 'Workflows',
-      },
-    };
-  },
-  computed: {
-    theme(){
-      return (Vuetify.framework.theme.dark) ? 'dark' : 'light'
-    }
-  },
-  created() {
-    this.$store.dispatch('created');
-  },
-};
+  export default {
+    name: 'app',
+    components: {},
+    data() {
+      return {
+        drawer: {},
+        menu: {
+          //task: 'Tasks',
+          items: 'Elements',
+          // logs: 'Logs',
+          // 'workflows': 'Workflows',
+        },
+      };
+    },
+    computed: {
+      theme() {
+        return (Vuetify.framework.theme.dark) ? 'dark' : 'light'
+      }
+    },
+    created() {
+      this.$store.dispatch('created');
+    },
+  };
 </script>
 
 <style>
