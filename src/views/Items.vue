@@ -31,7 +31,10 @@
               class="px-4"
             >
               <v-list-item-icon>
-                <v-icon v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+                <v-icon
+                  v-if="_.has($store.state.templates[table['name']], 'icon')"
+                  v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+                <v-icon v-else>mdi-help</v-icon>
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title v-text="_.startCase(table.name)"/>
