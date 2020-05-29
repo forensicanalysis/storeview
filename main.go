@@ -27,7 +27,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/markbates/pkger"
@@ -209,7 +208,7 @@ func main() {
 			}
 			defer teardown()
 
-			f, err := store.LoadFile(path.Join(storeName, p)) // TODO: fix in forensicstore
+			f, err := store.LoadFile(p)
 			if err != nil {
 				return err
 			}
