@@ -22,15 +22,15 @@ Author(s): Jonas Plum
 -->
 <template>
   <v-app :style="{background: $vuetify.theme.themes[theme].background}">
-    <v-app-bar color="sidebar" dark app flat dense hide-on-scroll>
+    <v-app-bar color="sidebar" dark app flat dense clipped-left hide-on-scroll>
       <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
       <v-spacer></v-spacer>
-      <!--v-toolbar-title class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
-      <v-spacer></v-spacer-->
-      <!--v-toolbar-items>
+      <v-toolbar-title class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
+      <v-spacer> </v-spacer>
+      <v-toolbar-items>
         <v-btn class="primary--text" text>Cases</v-btn>
         <v-btn text>Upload</v-btn>
-      </v-toolbar-items-->
+      </v-toolbar-items>
       <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
         <v-icon>mdi-invert-colors</v-icon>
       </v-btn>
@@ -50,31 +50,31 @@ Author(s): Jonas Plum
 </template>
 
 <script>
-  import Vuetify from './plugins/vuetify.js'
+import Vuetify from './plugins/vuetify.js';
 
-  export default {
-    name: 'app',
-    components: {},
-    data() {
-      return {
-        drawer: {},
-        menu: {
-          //task: 'Tasks',
-          items: 'Elements',
-          // logs: 'Logs',
-          // 'workflows': 'Workflows',
-        },
-      };
+export default {
+  name: 'app',
+  components: {},
+  data() {
+    return {
+      drawer: {},
+      menu: {
+        task: 'Tasks',
+        items: 'Elements',
+        logs: 'Logs',
+        // 'workflows': 'Workflows',
+      },
+    };
+  },
+  computed: {
+    theme() {
+      return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
     },
-    computed: {
-      theme() {
-        return (Vuetify.framework.theme.dark) ? 'dark' : 'light'
-      }
-    },
-    created() {
-      this.$store.dispatch('created');
-    },
-  };
+  },
+  created() {
+    this.$store.dispatch('created');
+  },
+};
 </script>
 
 <style>
