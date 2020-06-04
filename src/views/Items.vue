@@ -2,10 +2,14 @@
   <div>
     <v-navigation-drawer
       ref="drawerLeft"
-      :style="'overflow: hidden; width: '+navigationLeft.width+'px; flex-basis: '+navigationLeft.width+'px'"
       color="sidebar"
       dark
       clipped
+      app
+      :style="'flex-basis: '+navigationLeft.width+'px'"
+      :width="navigationLeft.width"
+      v-model="navigationLeft.shown"
+      style="overflow: hidden"
     >
       <div class="mt-2">
         <v-list dense>
@@ -62,8 +66,7 @@
           </v-list-item-group>
         </v-list>
       </div>
-      <v-card class="mt-2">
-        <v-spacer></v-spacer>
+      <v-card class="mt-2 d-flex justify-end" style="position: absolute; bottom: 0; right: 0; width: 100%">
         <v-btn
           small
           icon
@@ -100,7 +103,6 @@
               @click:row="select"
               :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
               show-select
-              dense
             >
               <template v-slot:body.prepend>
                 <tr>
@@ -112,7 +114,6 @@
                       @keyup.enter.native="searchFilter"
                       hide-details
                       label="Filter"
-                      dense
                     />
                   </td>
                 </tr>

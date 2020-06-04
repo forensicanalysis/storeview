@@ -32,16 +32,18 @@ export default new Vuetify({
     themes: {
       light: {
         primary: colors.red.lighten1,
-        appbar: '#fff', // colors.grey.lighten5,
+        appbar: colors.grey.lighten5,
         sidebar: colors.blueGrey.darken3,
         secondary: colors.blue.lighten1,
         accent: colors.pink.darken2,
         background: colors.blueGrey.lighten5,
+        toolbar: '#000',
       },
       dark: {
         primary: colors.red.lighten1,
         secondary: colors.blue.lighten1,
         primaryText: colors.red.lighten1,
+        toolbar: '#FFF',
       },
     },
   },

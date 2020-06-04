@@ -18,66 +18,80 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Author(s): Jonas Plum
+Author(s): Jonas Plum, Kadir Aslan
 -->
+
 <template>
   <v-app :style="{background: $vuetify.theme.themes[theme].background}">
-    <v-app-bar color="sidebar" dark app flat dense clipped-left hide-on-scroll>
-      <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-toolbar-title class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
-      <v-spacer> </v-spacer>
-      <v-toolbar-items>
-        <v-btn class="primary--text" text>Cases</v-btn>
-        <v-btn text>Upload</v-btn>
-      </v-toolbar-items>
-      <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
-        <v-icon>mdi-invert-colors</v-icon>
-      </v-btn>
+    <v-app-bar color="sidebar"
+               dark
+               app
+               flat
+               dense
+               height="96px"
+               clipped-left>
+      <v-container fluid>
+        <v-layout class="d-flex justify-space-between" row>
+          <v-toolbar-title style="margin-top: 9px" class="mr-8 ml-4">Elementary</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
+          <v-spacer> </v-spacer>
+          <v-toolbar-items>
+            <v-btn class="primary--text" text>Cases</v-btn>
+            <v-btn text>Upload</v-btn>
+          </v-toolbar-items>
+          <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+            <v-icon>mdi-invert-colors</v-icon>
+          </v-btn>
+        </v-layout>
+        <v-layout row>
+          <v-toolbar color="appbar" dense class="elevation-1">
+            <v-toolbar-items>
+              <v-btn  color="toolbar" v-for="(name, route) in menu" :key="name" @click="$router.push(route)"
+                     :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+                {{name}}
+              </v-btn>
+            </v-toolbar-items>
+          </v-toolbar>
+        </v-layout>
+      </v-container>
     </v-app-bar>
     <v-content>
-      <v-toolbar color="appbar" dense class="elevation-1">
-        <v-toolbar-items>
-          <v-btn v-for="(name, route) in menu" :key="name" @click="$router.push(route)"
-                 :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
-            {{name}}
-          </v-btn>
-        </v-toolbar-items>
-      </v-toolbar>
       <router-view/>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import Vuetify from './plugins/vuetify.js';
+  import Vuetify from './plugins/vuetify.js';
 
-export default {
-  name: 'app',
-  components: {},
-  data() {
-    return {
-      drawer: {},
-      menu: {
-        task: 'Tasks',
-        items: 'Elements',
-        logs: 'Logs',
-        // 'workflows': 'Workflows',
-      },
-    };
-  },
-  computed: {
-    theme() {
-      return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+  export default {
+    name: 'app',
+    components: {},
+    data() {
+      return {
+        drawer: {},
+        menu: {
+          task: 'Tasks',
+          items: 'Elements',
+          logs: 'Logs',
+          // 'workflows': 'Workflows',
+        },
+      };
     },
-  },
-  created() {
-    this.$store.dispatch('created');
-  },
-};
+    computed: {
+      theme() {
+        return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+      },
+    },
+    created() {
+      this.$store.dispatch('created');
+    },
+  };
 </script>
 
 <style>
+
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #B0BEC5;
@@ -107,4 +121,13 @@ export default {
   dd {
     margin-left: 12px;
   }
+
+  .v-toolbar__content, .v-toolbar__extension {
+    padding: 0;
+  }
+
+  .primary--text {
+    color: #d9045d;
+  }
+
 </style>
