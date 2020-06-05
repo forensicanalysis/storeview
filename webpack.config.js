@@ -14,14 +14,15 @@ module.exports = {
         'css-loader',
         {
           loader: 'sass-loader',
-          // Requires sass-loader@^7.0.0
+          // Requires styles-loader@^7.0.0
           /* options: {
-            implementation: require('sass'),
+            implementation: require('styles'),
             fiber: require('fibers'),
             indentedSyntax: true // optional
           }, */
-          // Requires sass-loader@^8.0.0
+          // Requires styles-loader@^8.0.0
           options: {
+            prependData: "@import '@/styles/variables.scss'",
             implementation: require('sass'),
             sassOptions: {
               fiber: require('fibers'),

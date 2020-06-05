@@ -78,14 +78,16 @@
       </v-card>
     </v-navigation-drawer>
     <v-container fluid>
-      <v-row class="mt-2" style="flex-wrap: nowrap;">
-        <v-col class="flex-grow-1 flex-shrink-1">
-          <v-card class="pt-2">
+      <v-row class="ma-0" style="flex-wrap: nowrap;">
+        <v-layout style="display: -webkit-box !important" class="flex-grow-1 flex-shrink-1">
+          <v-card class="pt-3">
             <v-text-field
               v-model="search"
-              prepend-icon="mdi-magnify"
+              prepend-inner-icon="mdi-magnify"
               clear-icon="mdi-close-circle"
               clearable
+              dense
+              outlined
               @keyup.enter.native="searchFilter"
               @click:append="searchFilter"
               @click:clear="clearFilter"
@@ -99,14 +101,15 @@
               :server-items-length="$store.state.itemCount"
               @update:options="updateopt"
               :fixed-header="true"
-              multi-sort
               @click:row="select"
               :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
               show-select
+              style="overflow: visible !important;"
+              dense
             >
               <template v-slot:body.prepend>
                 <tr>
-                  <td></td>
+                  <td><v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">mdi-filter-outline</v-icon></td>
                   <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
                       scope="col">
                     <v-text-field
@@ -114,6 +117,7 @@
                       @keyup.enter.native="searchFilter"
                       hide-details
                       label="Filter"
+                      :reverse="h.align === 'right'"
                     />
                   </td>
                 </tr>
@@ -136,11 +140,11 @@
               </template>
             </v-data-table>
           </v-card>
-        </v-col>
+        </v-layout>
         <v-col
-          :style="'overflow: hidden; width: '+navigationRight.width+'px; flex-basis: '+navigationRight.width+'px'"
+          :style="'overflow: hidden; width: ' + navigationRight.width + 'px; flex-basis: ' + navigationRight.width + 'px'"
           ref="drawerRight"
-          class="flex-grow-0 flex-shrink-0 mr-3"
+          class="ma-0 pt-0 pr-0"
         >
           <v-card>
             <v-toolbar
@@ -478,33 +482,50 @@ export default {
 
 </script>
 
-<style>
-  table tr td {
-    cursor: pointer !important;
-  }
+<style lang="sass">
 
-  * {
-    border-radius: 0 !important;
-  }
+  @import '~vuetify/src/styles/styles.sass'
+  @import '../styles/colors.scss'
 
-  .fade-enter-active, .fade-leave-active {
-    transition: opacity .2s;
-  }
+  table tr td
+    cursor: pointer !important
+
+  *
+    border-radius: 0 !important
+
+  .fade-enter-active, .fade-leave-active
+    transition: opacity .2s
 
   .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
-  {
-    opacity: 0;
-  }
+    opacity: 0
 
-  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label {
-    font-size: 0.8125rem;
-  }
+  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label
+    font-size: 0.8125rem
 
-  .v-data-table .v-label--active {
-    opacity: 0;
-  }
+  .v-data-table .v-label--active
+    opacity: 0
 
-  .v-data-table .v-text-field > .v-input__control > .v-input__slot:before {
-    border-style: none;
-  }
+  .v-data-table .v-text-field > .v-input__control > .v-input__slot:before
+    border-style: none
+
+  .v-text-field
+    padding-top: 0
+    margin-top: 0
+
+  .v-data-table--fixed-header .v-data-table__wrapper
+    overflow-y: hidden
+
+  .v-list-item__icon
+    min-width: max-content
+    font-size: 12px
+    line-height: 2
+
+  .v-application--is-ltr .v-list-item__icon:first-child
+    margin-right: 8px
+    margin-top: 6px
+
+  .v-list--dense .v-subheader
+    font-size: 1rem
+    font-weight: bold
+
 </style>
