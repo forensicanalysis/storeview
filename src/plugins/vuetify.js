@@ -44,6 +44,7 @@ export default new Vuetify({
         secondary: colors.blue.lighten1,
         primaryText: colors.red.lighten1,
         toolbar: '#FFF',
+        sidebar: colors.grey.darken4,
       },
     },
   },

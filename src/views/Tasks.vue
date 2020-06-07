@@ -1,21 +1,17 @@
 <template>
-  <v-container fluid>
-    <v-card>
-      <v-list dense>
-        <v-subheader>Tasks</v-subheader>
-        <v-list-item-group v-model="tasks" color="primary">
-          <v-list-item v-for="(item, i) in tasks" :key="i">
-            <v-list-item-icon>
-              <v-icon>mdi-play</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title v-text="item.text"></v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list-item-group>
-      </v-list>
-    </v-card>
-  </v-container>
+  <v-list dense>
+    <v-subheader>Tasks</v-subheader>
+    <v-list-item-group v-model="tasks" color="primary">
+      <v-list-item v-for="(item, i) in tasks" :key="i">
+        <v-list-item-icon>
+          <v-icon>mdi-play</v-icon>
+        </v-list-item-icon>
+        <v-list-item-content>
+          <v-list-item-title v-text="item.text"></v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list-item-group>
+  </v-list>
 </template>
 
 <script>

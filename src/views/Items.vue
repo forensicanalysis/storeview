@@ -1,198 +1,174 @@
 <template>
-  <div>
-    <v-navigation-drawer
+  <div class="d-flex flex-row" style="width: 100%">
+    <div
       ref="drawerLeft"
-      color="sidebar"
-      dark
-      clipped
-      app
-      :style="'flex-basis: '+navigationLeft.width+'px'"
-      :width="navigationLeft.width"
-      v-model="navigationLeft.shown"
-      style="overflow: hidden"
+      class="flex-grow-0 flex-shrink-0 verticalbar"
+      :style="'width: ' + leftWidth + 'px'"
+      style="border-right: 1px solid rgba(0, 0, 0, 0.12)"
     >
-      <div class="mt-2">
-        <v-list dense>
-          <v-subheader>Type</v-subheader>
-          <v-list-item-group v-model="itemTypeIndex" color="primary">
-            <v-list-item
-              v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
-              :key="i"
-              @click="loadList(table['name'])"
-              class="px-4"
-            >
-              <v-list-item-icon>
-                <v-icon
-                  v-if="_.has($store.state.templates[table['name']], 'icon')"
-                  v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
-                <v-icon v-else>mdi-file-outline</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title v-text="_.startCase(table.name)"/>
-              </v-list-item-content>
-              <v-list-item-icon>
-                <span v-if="'count' in table">{{table['count']}}</span>
-              </v-list-item-icon>
-            </v-list-item>
-          </v-list-item-group>
-        </v-list>
-      </div>
-      <div class="mt-2">
-        <v-list dense>
-          <v-list-item-group>
-            <v-subheader>Location</v-subheader>
-            <v-treeview
-              v-if="refresh && directories.length > 0"
-              activatable
-              hoverable
-              dense
-              transition
-              @update:active="updatedir"
-              :active.sync="active"
-              :items="directories"
-              :load-children="fetchTreeChildren"
-              :open.sync="open"
-              item-key="path"
-              color="primary"
-              ref="treeView"
-            >
-              <template v-slot:prepend="{ item, open }">
-                <v-icon v-if="item.children">
-                  {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-                </v-icon>
-                <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-              </template>
-            </v-treeview>
-          </v-list-item-group>
-        </v-list>
-      </div>
-      <v-card class="mt-2 d-flex justify-end"
-              style="position: absolute; bottom: 0; right: 0; width: 100%">
-        <v-btn
-          small
-          icon
-          right
-          @click="toogleLeft"
-        >
-          <v-icon>mdi-menu</v-icon>
+      <div class="d-flex justify-end">
+        <v-btn small icon @click="toogleLeft">
+          <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
-      </v-card>
-    </v-navigation-drawer>
-    <v-container fluid :class="{'pr-0': !this.detailsExpanded && this.detailsHidden}">
-      <v-row class="ma-0" style="flex-wrap: nowrap;">
-        <v-layout style="display: -webkit-box !important"
-                  class="flex-grow-1 flex-shrink-1 content-left"
-                  v-show="!detailsExpanded">
-          <v-card class="pt-3">
-            <v-text-field
-              v-model="search"
-              prepend-inner-icon="mdi-magnify"
-              clear-icon="mdi-close-circle"
-              clearable
-              dense
-              outlined
-              @keyup.enter.native="searchFilter"
-              @click:append="searchFilter"
-              @click:clear="clearFilter"
-              class="mx-3 my-0 py-0"
-            ></v-text-field>
-            <v-data-table
-              :headers="$store.state.headers"
-              :items="$store.state.items"
-              :loading="loading"
-              :options.sync="options"
-              :server-items-length="$store.state.itemCount"
-              @update:options="updateopt"
-              :fixed-header="true"
-              @click:row="select"
-              :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-              :items-per-page="50"
-              show-select
-              style="overflow: visible !important;"
-              dense
-            >
-              <template v-slot:body.prepend>
-                <tr>
-                  <td>
-                    <v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">
-                      mdi-filter-outline
-                    </v-icon>
-                  </td>
-                  <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
-                      scope="col">
-                    <v-text-field
-                      v-model="itemscol[h.value]"
-                      @keyup.enter.native="searchFilter"
-                      hide-details
-                      label="Filter"
-                      :reverse="h.align === 'right'"
-                      clearable
-                    />
-                  </td>
-                </tr>
-              </template>
-
-              <template v-slot:item.atime="{ item }">
-                <div>{{ toLocal(item.atime) }}</div>
-              </template>
-              <template v-slot:item.mtime="{ item }">
-                <div>{{ toLocal(item.mtime) }}</div>
-              </template>
-              <template v-slot:item.ctime="{ item }">
-                <div>{{ toLocal(item.ctime) }}</div>
-              </template>
-              <template v-slot:item.origin="{ item }">
-                <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
-              </template>
-              <template v-slot:item.size="{ item }">
-                <div>{{ humanBytes(item.size, true) }}</div>
-              </template>
-            </v-data-table>
-          </v-card>
-        </v-layout>
-        <v-col
-          :style="'overflow: hidden; width: ' + navigationRight.width + 'px; flex-basis: ' + navigationRight.width + 'px'"
-          ref="drawerRight"
-          class="ma-0 pt-0 pr-0 content-right"
-          transition="scale-transition"
-          :class="{ 'pl-0': detailsExpanded }"
+      </div>
+      <v-list dense>
+        <v-subheader>Type</v-subheader>
+        <v-list-item-group v-model="itemTypeIndex" color="primary">
+          <v-list-item
+            v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
+            :key="i"
+            @click="loadList(table['name'])"
+            class="px-4"
+          >
+            <v-list-item-icon>
+              <v-icon
+                v-if="_.has($store.state.templates[table['name']], 'icon')"
+                v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+              <v-icon v-else>mdi-file-outline</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title v-text="_.startCase(table.name)"/>
+            </v-list-item-content>
+            <v-list-item-icon>
+              <span v-if="'count' in table">{{table['count']}}</span>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+      <v-list class="mt-2" dense>
+        <v-list-item-group>
+          <v-subheader>Location</v-subheader>
+          <v-treeview
+            v-if="refresh && directories.length > 0"
+            activatable
+            hoverable
+            dense
+            transition
+            @update:active="updatedir"
+            :active.sync="active"
+            :items="directories"
+            :load-children="fetchTreeChildren"
+            :open.sync="open"
+            item-key="path"
+            color="primary"
+            ref="treeView"
+          >
+            <template v-slot:prepend="{ item, open }">
+              <v-icon v-if="item.children">
+                {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+              </v-icon>
+              <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
+            </template>
+          </v-treeview>
+        </v-list-item-group>
+      </v-list>
+    </div>
+    <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
+      <div style="overflow-x: scroll; transition: width 0.2s ease-in"
+           class="pt-3 flex-shrink-1 flex-grow-1"
+      >
+        <v-text-field
+          v-model="search"
+          prepend-inner-icon="mdi-magnify"
+          clear-icon="mdi-close-circle"
+          clearable
+          dense
+          outlined
+          @keyup.enter.native="searchFilter"
+          @click:append="searchFilter"
+          @click:clear="clearFilter"
+          class="mx-3"
+        />
+        <v-data-table
+          :headers="$store.state.headers"
+          :items="$store.state.items"
+          :loading="loading"
+          :options.sync="options"
+          :server-items-length="$store.state.itemCount"
+          @update:options="updateopt"
+          :fixed-header="true"
+          @click:row="select"
+          :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+          :items-per-page="50"
+          show-select
+          style="overflow: visible !important;"
+          dense
         >
-          <v-card>
-            <v-toolbar
-              v-if="!_.isEmpty($store.state.item) && !navigationRight.mini"
-              class="elevation-0 mx-2"
-              dense>
-              <v-toolbar-title>Details</v-toolbar-title>
-              <v-spacer></v-spacer>
-              <v-toolbar-items>
-                <v-btn
-                  small
-                  icon
-                  @click="expandDetails">
-                  <v-icon>mdi-arrow-all</v-icon>
-                </v-btn>
-                <v-btn
-                  small
-                  icon
-                  @click="closeLeft"
-                >
-                  <v-icon>mdi-close</v-icon>
-                </v-btn>
-              </v-toolbar-items>
-            </v-toolbar>
-            <v-divider class="mx-0"></v-divider>
-            <transition name="scale-transition">
-              <item v-show="!navigationRight.mini" :content="$store.state.item"/>
-            </transition>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+          <template v-slot:body.prepend>
+            <tr>
+              <td>
+                <v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">
+                  mdi-filter-outline
+                </v-icon>
+              </td>
+              <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
+                  scope="col">
+                <v-text-field
+                  v-model="itemscol[h.value]"
+                  @keyup.enter.native="searchFilter"
+                  hide-details
+                  label="Filter"
+                  :reverse="h.align === 'right'"
+                  clearable
+                />
+              </td>
+            </tr>
+          </template>
+
+          <template v-slot:item.atime="{ item }">
+            <div>{{ toLocal(item.atime) }}</div>
+          </template>
+          <template v-slot:item.mtime="{ item }">
+            <div>{{ toLocal(item.mtime) }}</div>
+          </template>
+          <template v-slot:item.ctime="{ item }">
+            <div>{{ toLocal(item.ctime) }}</div>
+          </template>
+          <template v-slot:item.origin="{ item }">
+            <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
+          </template>
+          <template v-slot:item.size="{ item }">
+            <div>{{ humanBytes(item.size, true) }}</div>
+          </template>
+        </v-data-table>
+      </div>
+      <div
+        :style="'width: ' + rightWidth + '%'"
+        style="border-left: 1px solid rgba(0, 0, 0, 0.12)"
+        class="flex-grow-0 flex-shrink-0 verticalbar"
+        ref="drawerRight"
+      >
+        <v-toolbar
+          v-if="!_.isEmpty($store.state.item)"
+          class="elevation-0 mx-2"
+          dense>
+          <v-toolbar-title>{{ $store.state.item.id }}</v-toolbar-title>
+          <v-spacer/>
+          <v-toolbar-items>
+            <v-btn
+              small
+              icon
+              @click="expandDetails">
+              <v-icon>mdi-fullscreen</v-icon>
+            </v-btn>
+            <v-btn
+              small
+              icon
+              @click="rightNull"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        <v-divider class="mx-0"/>
+        <item :content="$store.state.item"/>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-  import { DateTime } from 'luxon';
+  import {DateTime} from 'luxon';
   import item from '@/views/Document.vue';
 
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -209,8 +185,8 @@
       return {
 
         itemscol: {},
-        detailsExpanded: false,
-        detailsHidden: true,
+        rightWidth: 0,
+        leftWidth: 250,
 
         filter: {
           table: this.$store.state.type,
@@ -221,24 +197,6 @@
         active: [],
         open: [],
         refresh: true,
-
-        navigationLeft: {
-          type: 'left',
-          mini: false,
-          shown: true,
-          width: 250,
-          oldWidth: 250,
-          borderSize: 3,
-        },
-
-        navigationRight: {
-          type: 'right',
-          mini: true,
-          shown: true,
-          width: 0,
-          oldWidth: 500,
-          borderSize: 3,
-        },
 
         itemTypeIndex: 0,
         loading: false,
@@ -272,29 +230,22 @@
 
     methods: {
 
-      toggle(navigation) {
-        if (!navigation.mini) {
-          navigation.oldWidth = parseInt(navigation.width, 10);
-          if (navigation.type === 'left') {
-            navigation.width = 56;
-          } else {
-            navigation.width = 0;
-          }
-        }
-        navigation.mini = !navigation.mini;
-
-        if (!navigation.mini) {
-          navigation.width = parseInt(navigation.oldWidth, 10);
-        }
-      },
-
       toogleLeft() {
-        this.toggle(this.navigationLeft);
+        if (this.leftWidth !== 56) {
+          this.leftWidth = 56
+        } else {
+          this.leftWidth = 250
+        }
       },
 
-      toogleRight() {
-        this.detailsHidden = !this.detailsHidden;
-        this.toggle(this.navigationRight);
+      rightNull() {
+        this.rightWidth = 0
+      },
+      rightHalf() {
+        this.rightWidth = 50
+      },
+      rightFull() {
+        this.rightWidth = 100
       },
 
       humanBytes(bytes, si) {
@@ -320,19 +271,10 @@
         });
       },
 
-      closeLeft() {
-        if (this.detailsExpanded) {
-          this.toogleRight();
-          this.detailsExpanded = !this.detailsExpanded;
-        } else {
-          this.toogleRight();
-        }
-      },
-
       async getDirectories() {
         const that = this;
         if (this.directories.length === 0) {
-          this.$store.dispatch('loadDirectories', { path: '' })
+          this.$store.dispatch('loadDirectories', {path: ''})
             .then((response) => {
               for (let i = 0; i < response.length; i += 1) {
                 if (response[i].name !== '/') {
@@ -348,17 +290,13 @@
 
       async loadList(table) {
 
-        this.detailsExpanded = false;
-        this.detailsHidden = true;
         this.directories = [];
         this.itemscol = {};
         this.active = [];
         this.open = [];
 
         this.$store.commit('setItem', {});
-        if (!this.navigationRight.mini) {
-          this.toogleRight();
-        }
+        this.rightNull();
         this.$store.commit('setTable', table);
         this.$store.dispatch('loadItems')
           .then(() => {
@@ -378,9 +316,7 @@
 
       select(e) {
         this.$store.commit('setItem', e);
-        if (this.navigationRight.mini) {
-          this.toogleRight();
-        }
+        this.rightHalf();
       },
 
       toLocal(s) {
@@ -410,7 +346,7 @@
       updatedir(e) {
         let slash = '';
         let column = '';
-        const { type } = this.$store.state;
+        const {type} = this.$store.state;
 
         if (type === 'directory') {
           slash = '/';
@@ -463,17 +399,17 @@
       },
 
       expandDetails() {
-        if (!this.detailsExpanded) {
-          this.detailsExpanded = true;
+        if (this.rightWidth === 100) {
+          this.rightHalf()
         } else {
-          this.detailsExpanded = false;
+          this.rightFull();
         }
       },
 
       async fetchTreeChildren(item) {
         const directories = [];
 
-        this.$store.dispatch('loadDirectories', { path: item.path })
+        this.$store.dispatch('loadDirectories', {path: item.path})
           .then((response) => {
             if ((response.length === 1) && (response[0].name === '/')) {
               delete item.children;
@@ -523,7 +459,6 @@
 </script>
 
 <style lang="sass">
-
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
   @import '../styles/animations.scss'
@@ -533,6 +468,9 @@
 
   *
     border-radius: 0 !important
+
+  .verticalbar
+      transition: width .2s
 
   .fade-enter-active, .fade-leave-active
     transition: opacity .2s

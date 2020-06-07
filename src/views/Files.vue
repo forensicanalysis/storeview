@@ -1,46 +1,44 @@
 <template>
-  <v-container fluid>
-    <v-card>
-      <v-breadcrumbs :items="breadcrumbs">
-        <v-breadcrumbs-item
-          slot="item"
-          slot-scope="{ item }"
-          exact
-          @click="loadFiles( item.path )">
-          {{ item.text }}
-        </v-breadcrumbs-item>
-      </v-breadcrumbs>
-      <v-data-table
-        :headers="headers"
-        :items="files"
-        :fixed-header="true"
-        :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-        style="overflow: visible !important;"
-        dense
-      >
-        <template v-slot:item.name="{ item }">
-          <a v-if="item.dir" @click="loadFiles(item.path)">{{ item.name }}</a>
-          <div v-else>{{ item.name }}</div>
-        </template>
-        <template v-slot:item.mtime="{ item }">
-          <div>{{ toLocal(item.mtime) }}</div>
-        </template>
-        <template v-slot:item.size="{ item }">
-          <div>{{ humanBytes(item.size, true) }}</div>
-        </template>
+  <div>
+    <v-breadcrumbs :items="breadcrumbs">
+      <v-breadcrumbs-item
+        slot="item"
+        slot-scope="{ item }"
+        exact
+        @click="loadFiles( item.path )">
+        {{ item.text }}
+      </v-breadcrumbs-item>
+    </v-breadcrumbs>
+    <v-data-table
+      :headers="headers"
+      :items="files"
+      :fixed-header="true"
+      :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+      style="overflow: visible !important;"
+      dense
+    >
+      <template v-slot:item.name="{ item }">
+        <a v-if="item.dir" @click="loadFiles(item.path)">{{ item.name }}</a>
+        <div v-else>{{ item.name }}</div>
+      </template>
+      <template v-slot:item.mtime="{ item }">
+        <div>{{ toLocal(item.mtime) }}</div>
+      </template>
+      <template v-slot:item.size="{ item }">
+        <div>{{ humanBytes(item.size, true) }}</div>
+      </template>
 
-        <template v-slot:item.actions="{ item }">
-          <v-icon
-            v-if="!item.dir"
-            small
-            @click="editItem(item)"
-          >
-            mdi-download
-          </v-icon>
-        </template>
-      </v-data-table>
-    </v-card>
-  </v-container>
+      <template v-slot:item.actions="{ item }">
+        <v-icon
+          v-if="!item.dir"
+          small
+          @click="editItem(item)"
+        >
+          mdi-download
+        </v-icon>
+      </template>
+    </v-data-table>
+  </div>
 </template>
 
 <script>

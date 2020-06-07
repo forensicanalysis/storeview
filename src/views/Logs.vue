@@ -1,21 +1,17 @@
 <template>
-  <v-container fluid>
-    <v-card>
-      <v-data-table
-        :headers="headers"
-        :items="logs"
-        :fixed-header="true"
-        :footer-props="{'items-per-page-options': [50, 100]}"
-        :items-per-page="10"
-        style="overflow: visible !important;"
-        dense
-      >
-        <template v-slot:item.time="{ item }">
-          <div>{{ toLocal(item.time) }}</div>
-        </template>
-      </v-data-table>
-    </v-card>
-  </v-container>
+  <v-data-table
+    :headers="headers"
+    :items="logs"
+    :fixed-header="true"
+    :footer-props="{'items-per-page-options': [50, 100]}"
+    :items-per-page="10"
+    style="overflow: visible !important;"
+    dense
+  >
+    <template v-slot:item.time="{ item }">
+      <div>{{ toLocal(item.time) }}</div>
+    </template>
+  </v-data-table>
 </template>
 
 <script>

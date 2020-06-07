@@ -24,53 +24,43 @@ Author(s): Jonas Plum, Kadir Aslan
 <template>
   <v-app :style="{background: $vuetify.theme.themes[theme].background}">
     <v-app-bar color="sidebar"
-               dark
                app
                flat
+               dark
                dense
-               height="96px"
-               clipped-left>
-      <v-container fluid>
-        <v-layout class="d-flex justify-space-between" row>
-          <v-toolbar-title style="margin-top: 9px" class="mr-8 ml-4">Elementary</v-toolbar-title>
-          <v-spacer/>
-          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">
-            md1rejuc_2020-05-11T14-05-57.forensicstore
-          </v-toolbar-title>
-          <v-spacer/>
-          <v-toolbar-items>
-            <v-btn class="primary--text" text>Cases</v-btn>
-            <v-btn text>Upload</v-btn>
-          </v-toolbar-items>
-          <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
-            <v-icon>mdi-invert-colors</v-icon>
-          </v-btn>
-        </v-layout>
-        <v-layout row>
-          <v-toolbar color="appbar" dense class="elevation-1">
-            <v-toolbar-items>
-              <v-btn color="toolbar" v-for="(menuitem, route) in menu" :key="menuitem.name"
-                     @click="$router.push(route)"
-                     :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
-                <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon" />
-                {{menuitem.name}}
-              </v-btn>
-            </v-toolbar-items>
-            <v-spacer/>
-            <v-toolbar-items>
-              <v-btn color="toolbar" v-for="(menuitem, route) in rmenu" :key="menuitem.name"
-                     @click="$router.push(route)"
-                     :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
-                <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon" />
-                {{menuitem.name}}
-              </v-btn>
-            </v-toolbar-items>
-          </v-toolbar>
-        </v-layout>
-      </v-container>
+               extended>
+      <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
+      <v-spacer/>
+      <v-toolbar-title class="mr-8 ml-4 body-1">
+        md1rejuc_2020-05-11T14-05-57.forensicstore
+      </v-toolbar-title>
+      <v-spacer/>
+      <v-toolbar-items>
+        <v-btn class="primary--text" text>Cases</v-btn>
+        <v-btn text>Upload</v-btn>
+      </v-toolbar-items>
+      <v-btn class="mr-3" icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+        <v-icon>mdi-invert-colors</v-icon>
+      </v-btn>
     </v-app-bar>
     <v-content>
-      <router-view/>
+      <v-card class="mx-3 mb-3" style="margin-top: -48px; z-index: 10">
+        <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12);">
+          <v-tab v-for="(menuitem, route) in menu" :key="menuitem.name"
+                 @click="$router.push(route)"
+                 :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+            <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
+            {{menuitem.name}}
+          </v-tab>
+          <v-spacer/>
+          <v-tab v-for="(menuitem, route) in rmenu" :key="menuitem.name"
+                         @click="$router.push(route)">
+              <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
+              {{ menuitem.name }}
+          </v-tab>
+        </v-tabs>
+        <router-view/>
+      </v-card>
     </v-content>
   </v-app>
 </template>
@@ -85,7 +75,7 @@ Author(s): Jonas Plum, Kadir Aslan
       return {
         drawer: {},
         menu: {
-          items: {name: 'Elements', icon: 'information'},
+          items: {name: 'Elements', icon: 'periodic-table'},
           files: {name: 'Files', icon: 'file-tree'},
           tasks: {name: 'Tasks', icon: 'checkbox-marked-outline'},
         },

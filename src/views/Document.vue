@@ -22,11 +22,11 @@ Author(s): Jonas Plum
 -->
 <template>
   <div>
-    <v-tabs v-model="tab" icons-and-text>
+    <v-tabs small v-model="tab">
       <v-tabs-slider/>
       <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
         {{view['title']}}
-        <v-icon>mdi-{{view['icon']}}</v-icon>
+        <!--v-icon>mdi-{{view['icon']}}</v-icon-->
       </v-tab>
     </v-tabs>
     <v-tabs-items v-model="tab">
@@ -45,9 +45,6 @@ Author(s): Jonas Plum
         <v-card flat class="pa-2" style="overflow: auto">
           <pre>{{data}}</pre>
         </v-card>
-      </v-tab-item>
-      <v-tab-item :value="'tab-hex'" style="overflow: auto">
-        <!--v-card flat class="pa-2">{{ hexEncode(data) }}</v-card-->
       </v-tab-item>
       <v-tab-item :value="'tab-pdf'" style="overflow: auto">
         <pdf
@@ -71,98 +68,80 @@ Author(s): Jonas Plum
 </template>
 
 <script>
-import pdf from 'vue-pdf';
-import { component as VueCodeHighlight } from 'vue-code-highlight';
-import JsonToHtml from '@/components/json-to-html.vue';
+  import pdf from 'vue-pdf';
+  import {component as VueCodeHighlight} from 'vue-code-highlight';
+  import JsonToHtml from '@/components/json-to-html.vue';
 
-export default {
-  name: 'item',
-  components: {
-    JsonToHtml,
-    pdf,
-    VueCodeHighlight,
-  },
-  data() {
-    return {
-      tab: null,
-      data: '',
-      active: 'Info',
-      views: [
-        {
-          title: 'Info',
-          icon: 'information',
-        },
-        {
-          title: 'Raw',
-          icon: 'json',
-        },
-      ],
-      numPages: 1,
-      page: 1,
-      loaded: false,
-    };
-  },
-  watch: {
-    content() {
-      if ('export_path' in this.content && this._.endsWith(this.content.export_path, '.pdf')) {
-        this.views = this._.filter(this.views, o => o.title !== 'PDF');
-        this.views.push({
-          title: 'PDF',
-          icon: 'file-pdf-outline',
-        });
-      } else {
-        this.views = this._.filter(this.views, o => o.title !== 'PDF');
-      }
-
-      if ('export_path' in this.content && this._.endsWith(this.content.export_path, '.jpg')) {
-        this.views = this._.filter(this.views, o => o.title !== 'Image');
-        this.views.push({
-          title: 'Image',
-          icon: 'file-image-outline',
-        });
-      } else {
-        this.views = this._.filter(this.views, o => o.title !== 'Image');
-      }
-
-      if ('export_path' in this.content) {
-        this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
-        this.views.push({
-          title: 'Hex',
-          icon: 'file-document-outline',
-        }, {
-          title: 'Text',
-          icon: 'file-document-outline',
-        });
-        const that = this;
-        this.$http.get(`http://localhost:8081/api/file?path=${this.content.export_path}`)
-          .then((response) => {
-            that.data = response.data;
+  export default {
+    name: 'item',
+    components: {
+      JsonToHtml,
+      pdf,
+      VueCodeHighlight,
+    },
+    data() {
+      return {
+        tab: null,
+        data: '',
+        active: 'Info',
+        views: [
+          {
+            title: 'Info',
+            icon: 'information',
+          },
+          {
+            title: 'Raw',
+            icon: 'json',
+          },
+        ],
+        numPages: 1,
+        page: 1,
+        loaded: false,
+      };
+    },
+    watch: {
+      content() {
+        if ('export_path' in this.content && this._.endsWith(this.content.export_path, '.pdf')) {
+          this.views = this._.filter(this.views, o => o.title !== 'PDF');
+          this.views.push({
+            title: 'PDF',
+            icon: 'file-pdf-outline',
           });
-      } else {
-        this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
-      }
-    },
-  },
-  props: {
-    content: {
-      type: Object,
-      required: true,
-    },
-  },
-  methods: {
-    hexEncode(s) {
-      let hex;
-      let i;
+        } else {
+          this.views = this._.filter(this.views, o => o.title !== 'PDF');
+        }
 
-      let result = '';
-      for (i = 0; i < s.length; i += 1) {
-        hex = s.charCodeAt(i)
-          .toString(16);
-        result += (` ${hex}`).slice(-4);
-      }
+        if ('export_path' in this.content && this._.endsWith(this.content.export_path, '.jpg')) {
+          this.views = this._.filter(this.views, o => o.title !== 'Image');
+          this.views.push({
+            title: 'Image',
+            icon: 'file-image-outline',
+          });
+        } else {
+          this.views = this._.filter(this.views, o => o.title !== 'Image');
+        }
 
-      return result;
+        if ('export_path' in this.content && this.content.size < 5 * 1000 * 1000) {
+          this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
+          this.views.push({
+            title: 'Text',
+            icon: 'file-document-outline',
+          });
+          const that = this;
+          this.$http.get(`http://localhost:8081/api/file?path=${this.content.export_path}`)
+            .then((response) => {
+              that.data = response.data;
+            });
+        } else {
+          this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
+        }
+      },
     },
-  },
-};
+    props: {
+      content: {
+        type: Object,
+        required: true,
+      },
+    },
+  };
 </script>
