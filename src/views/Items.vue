@@ -80,8 +80,8 @@
     </v-navigation-drawer>
     <v-container fluid :class="{'pr-0': !this.detailsExpanded && this.detailsHidden}">
       <v-row class="ma-0" style="flex-wrap: nowrap;">
-        <v-layout style="display: -webkit-box !important"
-                  class="flex-grow-1 flex-shrink-1 content-left"
+        <v-layout style="display: -webkit-box !important; width: 100%"
+                  class="flex-grow-1 flex-shrink-1 pb-3 content-left"
                   v-show="!detailsExpanded">
           <v-card class="pt-3">
             <v-text-field
@@ -555,6 +555,7 @@
 
   .v-data-table--fixed-header .v-data-table__wrapper
     overflow-y: hidden
+    overflow-wrap: anywhere
 
   .v-list-item__icon
     min-width: max-content

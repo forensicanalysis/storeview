@@ -22,7 +22,7 @@ Author(s): Jonas Plum, Kadir Aslan
 -->
 
 <template>
-  <v-app :style="{background: $vuetify.theme.themes[theme].background}">
+  <v-app :style="{background: $vuetify.theme.themes[theme].background}" :class="scrollbarTheme">
     <v-app-bar color="sidebar"
                dark
                app
@@ -34,8 +34,10 @@ Author(s): Jonas Plum, Kadir Aslan
         <v-layout class="d-flex justify-space-between" row>
           <v-toolbar-title style="margin-top: 9px" class="mr-8 ml-4">Elementary</v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
-          <v-spacer> </v-spacer>
+          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">
+            md1rejuc_2020-05-11T14-05-57.forensicstore
+          </v-toolbar-title>
+          <v-spacer></v-spacer>
           <v-toolbar-items>
             <v-btn class="primary--text" text>Cases</v-btn>
             <v-btn text>Upload</v-btn>
@@ -47,7 +49,8 @@ Author(s): Jonas Plum, Kadir Aslan
         <v-layout row>
           <v-toolbar color="appbar" dense class="elevation-1">
             <v-toolbar-items>
-              <v-btn  color="toolbar" v-for="(name, route) in menu" :key="name" @click="$router.push(route)"
+              <v-btn color="toolbar" v-for="(name, route) in menu" :key="name"
+                     @click="$router.push(route)"
                      :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
                 {{name}}
               </v-btn>
@@ -83,6 +86,9 @@ Author(s): Jonas Plum, Kadir Aslan
       theme() {
         return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
       },
+      scrollbarTheme() {
+        return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+      },
     },
     created() {
       this.$store.dispatch('created');
@@ -90,7 +96,9 @@ Author(s): Jonas Plum, Kadir Aslan
   };
 </script>
 
-<style>
+<style lang="scss">
+
+  @import './styles/colors.scss';
 
   body {
     font-family: 'Roboto', sans-serif;
@@ -129,5 +137,69 @@ Author(s): Jonas Plum, Kadir Aslan
   .primary--text {
     color: #d9045d;
   }
+
+  /*::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: $c-midnight;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-track-piece {
+    background: $c-shadow;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: $c-pink;
+    height: 50px;
+    border-radius: 10px;
+    border: none;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: none;
+  }*/
+
+  /*::-webkit-scrollbar {
+    width: 15px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #e6e6e6;
+    border-left: 1px solid #dadada;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #b0b0b0;
+    border: solid 3px #e6e6e6;
+    border-radius: 7px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: black;
+  }
+
+  /*.dark::-webkit-scrollbar {
+    width: 15px;
+  }
+
+  .dark::-webkit-scrollbar-track {
+    background: #202020;
+    border-left: 1px solid #2c2c2c;
+  }
+
+  .dark::-webkit-scrollbar-thumb {
+    background: #3e3e3e;
+    border: solid 3px #202020;
+    border-radius: 7px;
+  }
+
+  .dark::-webkit-scrollbar-thumb:hover {
+    background: white;
+  }*/
 
 </style>

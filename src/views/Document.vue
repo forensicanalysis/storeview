@@ -22,13 +22,19 @@ Author(s): Jonas Plum
 -->
 <template>
   <div>
-    <v-tabs v-model="tab" icons-and-text>
+    <v-tabs
+      v-model="tab"
+      icons-and-text
+      next-icon="mdi-menu-right"
+      prev-icon="mdi-menu-left"
+      show-arrows>
       <v-tabs-slider/>
       <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
         {{view['title']}}
         <v-icon>mdi-{{view['icon']}}</v-icon>
       </v-tab>
     </v-tabs>
+    <v-divider></v-divider>
     <v-tabs-items v-model="tab">
       <v-tab-item :value="'tab-raw'">
         <v-card flat class="pa-2" style="overflow: auto; max-height: 100%">
@@ -166,3 +172,11 @@ export default {
   },
 };
 </script>
+
+<style lang="sass">
+  .v-slide-group.v-item-group > .v-slide-group__next, .v-slide-group.v-item-group > .v-slide-group__prev
+    min-width: 0
+    .theme--light.v-icon
+      &:hover
+        color: #d9045d
+</style>
