@@ -22,7 +22,7 @@
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -82,7 +82,10 @@ func listTree() *cobraserver.Command {
 
 			conn := store.Connection()
 
-			stmt := conn.Prep(query)
+			stmt, err := conn.Prepare(query)
+			if err != nil {
+				return err
+			}
 			for {
 				if hasRow, err := stmt.Step(); err != nil {
 					return err
@@ -111,6 +114,7 @@ func selectItems() *cobraserver.Command {
 			f.String("uid", "", "uid")
 			f.StringArray("filter", nil, "")
 			f.StringArray("sort", nil, "")
+			f.StringArray("labels", nil, "")
 			f.Int("offset", 0, "")
 			f.Int("limit", 30, "")
 		},
@@ -141,9 +145,11 @@ func selectItems() *cobraserver.Command {
 				return err
 			}
 
-			if name == "" {
-				return errors.New("type or uid must be set")
-			}
+			/*
+				if name == "" {
+					return errors.New("type or uid must be set")
+				}
+			*/
 
 			opt := NewSelectOptions()
 
@@ -182,6 +188,11 @@ func selectItems() *cobraserver.Command {
 					opt.Filter[parts[0]] = parts[1]
 				}
 			}
+			labels, err := flags.GetStringArray("labels")
+			if err != nil {
+				return err
+			}
+			opt.Labels = labels
 
 			offset, err := flags.GetInt("offset")
 			if err != nil {
@@ -247,6 +258,121 @@ func listTables() *cobraserver.Command {
 	}
 }
 
+func label() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "label",
+		Route:  "/label",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			f.String("id", "", "id")
+			f.String("label", "", "label")
+			f.String("set", "true", "set")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
+
+			id, err := flags.GetString("id")
+			if err != nil {
+				return err
+			}
+
+			label, err := flags.GetString("label")
+			if err != nil {
+				return err
+			}
+
+			set, err := flags.GetString("set")
+			if err != nil {
+				return err
+			}
+
+			conn := store.Connection()
+			stmt, err := conn.Prepare(fmt.Sprintf(
+				"UPDATE elements "+
+					"SET json = json_patch(json,'{\"label\": {\"%s\": %s}}') "+
+					"WHERE id = $id", label, set,
+			))
+			if err != nil {
+				return err
+			}
+
+			stmt.SetText("$id", id)
+
+			_, err = stmt.Step()
+			if err != nil {
+				return err
+			}
+
+			err = stmt.Finalize()
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintAny(w, true)
+		},
+	}
+}
+
+func labels() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "labels",
+		Route:  "/labels",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
+
+			conn := store.Connection()
+			stmt, err := conn.Prepare(
+				"SELECT json_extract(json, '$.label') AS labels " +
+					"FROM elements " +
+					"WHERE json_extract(json, '$.label') != ''",
+			)
+			if err != nil {
+				return err
+			}
+
+			var labels []string
+
+			for {
+				if hasRow, err := stmt.Step(); err != nil {
+					return err
+				} else if !hasRow {
+					break
+				}
+
+				elabels := map[string]bool{}
+				label := stmt.GetText("labels")
+				err = json.Unmarshal([]byte(label), &elabels)
+				if err != nil {
+					return err
+				}
+
+				for label, valid := range elabels {
+					if valid {
+						labels = append(labels, label)
+					}
+				}
+			}
+			err = stmt.Finalize()
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintAny(w, labels)
+		},
+	}
+}
+
 type Direction string
 
 const (
@@ -258,6 +384,7 @@ const (
 type SelectOptions struct {
 	Sort   map[string]Direction
 	Filter map[string]string
+	Labels []string
 	Limit  int
 	Offset int
 }
@@ -266,6 +393,7 @@ func NewSelectOptions() *SelectOptions {
 	return &SelectOptions{
 		Sort:   map[string]Direction{},
 		Filter: map[string]string{},
+		Labels: []string{},
 		Limit:  30,
 		Offset: 0,
 	}
@@ -274,8 +402,10 @@ func NewSelectOptions() *SelectOptions {
 func queryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) (int64, []forensicstore.JSONElement, error) {
 	q := ""
 
-	filters := []string{
-		fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType),
+	var filters []string
+
+	if itemType != "" {
+		filters = append(filters, fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType))
 	}
 
 	if len(options.Filter) > 0 {
@@ -290,7 +420,15 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 		}
 	}
 
-	q += " WHERE " + strings.Join(filters, " AND ")
+	if len(options.Labels) > 0 {
+		for _, label := range options.Labels {
+			filters = append(filters, fmt.Sprintf("json_extract(json, '$.label.%s')", label))
+		}
+	}
+
+	if len(filters) > 0 {
+		q += " WHERE " + strings.Join(filters, " AND ")
+	}
 
 	if len(options.Sort) > 0 {
 		var sorts []string

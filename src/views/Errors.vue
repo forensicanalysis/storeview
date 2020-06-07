@@ -8,6 +8,12 @@
     style="overflow: visible !important;"
     dense
   >
+    <template v-slot:item.title="{ item }">
+      <div>{{ title(item) }}</div>
+    </template>
+    <template v-slot:item.description="{ item }">
+      <div>{{ description(item) }}</div>
+    </template>
   </v-data-table>
 </template>
 
@@ -15,12 +21,15 @@
   import {invoke} from "../store/invoke";
 
   export default {
-    name: 'logs',
+    name: 'errors',
     data() {
       return {
         headers: [
+          // {text: "ID", value: "id"},
+          {text: "Title", value: "title"},
+          {text: "Type", value: "type"},
+          // {text: "Description", value: "description"},
           {text: "Errors", value: "errors"},
-          {text: "ID", value: "id"},
         ],
         errors: [],
       };
@@ -31,6 +40,31 @@
         invoke('GET', '/errors', [], (data) => {
           this.errors = data.elements;
         });
+      },
+
+      title(element) {
+        if (_.has(this.$store.state.templates, element['type'])) {
+          return element[this.$store.state.templates[element['type']].headers[0].value]
+        }
+        if (_.has(element, 'name')) {
+          return element['name'];
+        }
+        if (_.has(element, 'key')) {
+          return element['key'];
+        }
+        if (_.has(element, 'title')) {
+          return element['title'];
+        }
+        return "";
+      },
+      description(element) {
+        if (_.has(element, 'description')) {
+          return element['name'];
+        }
+        if (_.has(element, 'desc')) {
+          return element['key'];
+        }
+        return "";
       },
     },
 

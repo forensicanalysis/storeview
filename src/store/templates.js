@@ -20,6 +20,18 @@
 // Author(s): Jonas Plum
 
 export const templates = {
+  "": {
+    icon: 'file-multiple',
+    headers: [{
+      text: 'Title',
+      align: 'left',
+      value: 'title',
+    },{
+      text: 'Type',
+      align: 'left',
+      value: 'type',
+    }]
+  },
   file: {
     icon: 'file',
     headers: [{

@@ -14,6 +14,14 @@
       <v-list dense>
         <v-subheader>Type</v-subheader>
         <v-list-item-group v-model="itemTypeIndex" color="primary">
+          <v-list-item @click="loadList('')">
+            <v-list-item-icon>
+              <v-icon>mdi-file-multiple</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>All</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
           <v-list-item
             v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
             :key="i"
@@ -97,8 +105,11 @@
           <template v-slot:body.prepend>
             <tr>
               <td>
-                <v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">
+                <v-icon v-if="_.isEmpty(filter.columns)" color="primary" small class="ml-1">
                   mdi-filter-outline
+                </v-icon>
+                <v-icon v-else color="primary" small class="ml-1" @click="emptyFilter">
+                  mdi-filter-remove-outline
                 </v-icon>
               </td>
               <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
@@ -115,6 +126,9 @@
             </tr>
           </template>
 
+          <template v-slot:item.title="{ item }">
+            <div>{{ title(item) }}</div>
+          </template>
           <template v-slot:item.atime="{ item }">
             <div>{{ toLocal(item.atime) }}</div>
           </template>
@@ -217,15 +231,6 @@
         return 0;
       },
 
-      paneSize: {
-        get() {
-          return this.$store.state.listPane;
-        },
-        set(value) {
-          this.$store.commit('setlistPane', value);
-        },
-      },
-
     },
 
     methods: {
@@ -271,6 +276,22 @@
         });
       },
 
+      title(element) {
+        if (_.has(this.$store.state.templates, element['type'])) {
+          return element[this.$store.state.templates[element['type']].headers[0].value]
+        }
+        if (_.has(element, 'name')) {
+          return element['name'];
+        }
+        if (_.has(element, 'key')) {
+          return element['key'];
+        }
+        if (_.has(element, 'title')) {
+          return element['title'];
+        }
+        return "";
+      },
+
       async getDirectories() {
         const that = this;
         if (this.directories.length === 0) {
@@ -283,8 +304,6 @@
               }
             })
             .catch(error => console.warn(error));
-
-          console.log('INITIAL: ', JSON.stringify(this.directories, null, 1));
         }
       },
 
@@ -312,6 +331,12 @@
               columns: {},
             };
           });
+      },
+
+      emptyFilter() {
+        console.log("empty");
+        Vue.$set(this, "itemscol", {});
+        this.searchFilter();
       },
 
       select(e) {

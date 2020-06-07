@@ -39,7 +39,8 @@ func main() {
 	var staticPath pkger.Dir = "/dist"
 	rootCmd := cobraserver.Application(
 		"fstore", 800, 600, staticPath, false,
-		listTables(), selectItems(), loadFile(), listTree(), listTasks(), files(), logs(), errorsCommand(),
+		listTables(), selectItems(), loadFile(), listTree(), listTasks(),
+		files(), logs(), errorsCommand(), label(), labels(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
