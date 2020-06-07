@@ -22,28 +22,34 @@
 package main
 
 import (
-	"log"
-	"os"
+	"io"
+	"net/http"
 
-	"github.com/markbates/pkger"
+	"github.com/spf13/pflag"
 
+	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-//go:generate yarn install
-//go:generate yarn build
-//go:generate go get -u github.com/markbates/pkger/cmd/pkger
-//go:generate pkger -o assets
+func errorsCommand() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listErrors",
+		Route:  "/errors",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
 
-func main() {
-	var staticPath pkger.Dir = "/dist"
-	rootCmd := cobraserver.Application(
-		"fstore", 800, 600, staticPath, false,
-		listTables(), selectItems(), loadFile(), listTree(), listTasks(), files(), logs(), errorsCommand(),
-	)
+			elements, err := store.Query("SELECT json FROM elements WHERE json_extract(json, '$.errors') != ''")
+			if err != nil {
+				return err
+			}
 
-	if err := rootCmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(1)
+			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
+		},
 	}
 }

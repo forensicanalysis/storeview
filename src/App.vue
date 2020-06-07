@@ -33,9 +33,11 @@ Author(s): Jonas Plum, Kadir Aslan
       <v-container fluid>
         <v-layout class="d-flex justify-space-between" row>
           <v-toolbar-title style="margin-top: 9px" class="mr-8 ml-4">Elementary</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">md1rejuc_2020-05-11T14-05-57.forensicstore</v-toolbar-title>
-          <v-spacer> </v-spacer>
+          <v-spacer/>
+          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">
+            md1rejuc_2020-05-11T14-05-57.forensicstore
+          </v-toolbar-title>
+          <v-spacer/>
           <v-toolbar-items>
             <v-btn class="primary--text" text>Cases</v-btn>
             <v-btn text>Upload</v-btn>
@@ -47,9 +49,20 @@ Author(s): Jonas Plum, Kadir Aslan
         <v-layout row>
           <v-toolbar color="appbar" dense class="elevation-1">
             <v-toolbar-items>
-              <v-btn  color="toolbar" v-for="(name, route) in menu" :key="name" @click="$router.push(route)"
+              <v-btn color="toolbar" v-for="(menuitem, route) in menu" :key="menuitem.name"
+                     @click="$router.push(route)"
                      :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
-                {{name}}
+                <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon" />
+                {{menuitem.name}}
+              </v-btn>
+            </v-toolbar-items>
+            <v-spacer/>
+            <v-toolbar-items>
+              <v-btn color="toolbar" v-for="(menuitem, route) in rmenu" :key="menuitem.name"
+                     @click="$router.push(route)"
+                     :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+                <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon" />
+                {{menuitem.name}}
               </v-btn>
             </v-toolbar-items>
           </v-toolbar>
@@ -72,10 +85,13 @@ Author(s): Jonas Plum, Kadir Aslan
       return {
         drawer: {},
         menu: {
-          task: 'Tasks',
-          items: 'Elements',
-          logs: 'Logs',
-          // 'workflows': 'Workflows',
+          items: {name: 'Elements', icon: 'information'},
+          files: {name: 'Files', icon: 'file-tree'},
+          tasks: {name: 'Tasks', icon: 'checkbox-marked-outline'},
+        },
+        rmenu: {
+          errors: {name: 'Errors', icon: 'alert'},
+          logs: {name: 'Logs', icon: 'script-text-outline'},
         },
       };
     },
@@ -97,8 +113,12 @@ Author(s): Jonas Plum, Kadir Aslan
     background-color: #B0BEC5;
   }
 
-  h1, h2, h3, .v-toolbar, .title {
+  h1, h2, h3, .v-toolbar__title, .title {
     font-family: 'Roboto-Slab', serif;
+  }
+
+  .v-toolbar .v-btn__content {
+    font-weight: 400 !important;
   }
 
   .v-btn--fab {

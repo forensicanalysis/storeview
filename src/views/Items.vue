@@ -25,7 +25,7 @@
                 <v-icon
                   v-if="_.has($store.state.templates[table['name']], 'icon')"
                   v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
-                <v-icon v-else>mdi-help</v-icon>
+                <v-icon v-else>mdi-file-outline</v-icon>
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title v-text="_.startCase(table.name)"/>
@@ -106,6 +106,7 @@
               :fixed-header="true"
               @click:row="select"
               :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+              :items-per-page="50"
               show-select
               style="overflow: visible !important;"
               dense

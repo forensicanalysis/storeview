@@ -21,7 +21,7 @@
 
 export const templates = {
   file: {
-    icon: 'folder',
+    icon: 'file',
     headers: [{
       text: 'Name',
       align: 'left',

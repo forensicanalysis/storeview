@@ -22,28 +22,34 @@
 package main
 
 import (
-	"log"
-	"os"
+	"io"
+	"net/http"
 
-	"github.com/markbates/pkger"
+	"github.com/spf13/pflag"
 
+	"github.com/forensicanalysis/forensicworkflows/cmd"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-//go:generate yarn install
-//go:generate yarn build
-//go:generate go get -u github.com/markbates/pkger/cmd/pkger
-//go:generate pkger -o assets
+func listTasks() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listTasks",
+		Route:  "/tasks",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			// f.String("directory", "/", "current directory")
+			// f.String("type", "file", "item type")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 
-func main() {
-	var staticPath pkger.Dir = "/dist"
-	rootCmd := cobraserver.Application(
-		"fstore", 800, 600, staticPath, false,
-		listTables(), selectItems(), loadFile(), listTree(), listTasks(), files(), logs(), errorsCommand(),
-	)
+			runCmd := cmd.Run()
+			commands := runCmd.Commands()
+			var children []string
+			for _, command := range commands {
+				children = append(children, command.Name())
+			}
 
-	if err := rootCmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(1)
+			return cobraserver.PrintAny(w, children)
+		},
 	}
 }
