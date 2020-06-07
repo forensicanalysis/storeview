@@ -113,8 +113,6 @@ export default new Vuex.Store({
       }
       state.offset = 0;
       state.items = data;
-      console.log('SIZE');
-      console.log(state.items.length);
     },
 
     setItemCount(state, data) {
@@ -155,13 +153,11 @@ export default new Vuex.Store({
 
     loadItems({ commit, state }) {
       let url = `/items?type=${state.type}`;
-      console.log(state.type);
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, (value, column) => {
           for (let i = 0; i < value.length; i += 1) {
             url += `&filter[${column}]=${encodeURI(value[i])}`;
           }
-          console.log(url);
         });
       }
       if (!Vue._.isEmpty(state.sort) && state.sort.type !== '' && !Vue._.isEmpty(state.sort.columns)) {
@@ -187,7 +183,6 @@ export default new Vuex.Store({
       console.log(url);
 
       invoke('GET', url, [], (items) => {
-        console.log(items);
         commit('setItems', items.elements);
         commit('setItemCount', items.count);
       });
@@ -218,11 +213,8 @@ export default new Vuex.Store({
 
         url += `&type=${state.type}`;
 
-        // url = '/tree?directory=/C/&type=directory'
-        console.log('***************\n', url);
-
         invoke('GET', url, [], (data) => {
-          console.log(data);
+          return
         }).then((response) => {
           for (let i = 0; i < response.length; i += 1) {
             if ((state.type === 'windows-registry-key') && (payload.path === '')) {

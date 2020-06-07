@@ -66,7 +66,8 @@
           </v-list-item-group>
         </v-list>
       </div>
-      <v-card class="mt-2 d-flex justify-end" style="position: absolute; bottom: 0; right: 0; width: 100%">
+      <v-card class="mt-2 d-flex justify-end"
+              style="position: absolute; bottom: 0; right: 0; width: 100%">
         <v-btn
           small
           icon
@@ -77,9 +78,11 @@
         </v-btn>
       </v-card>
     </v-navigation-drawer>
-    <v-container fluid>
+    <v-container fluid :class="{'pr-0': !this.detailsExpanded && this.detailsHidden}">
       <v-row class="ma-0" style="flex-wrap: nowrap;">
-        <v-layout style="display: -webkit-box !important" class="flex-grow-1 flex-shrink-1">
+        <v-layout style="display: -webkit-box !important"
+                  class="flex-grow-1 flex-shrink-1 content-left"
+                  v-show="!detailsExpanded">
           <v-card class="pt-3">
             <v-text-field
               v-model="search"
@@ -109,7 +112,11 @@
             >
               <template v-slot:body.prepend>
                 <tr>
-                  <td><v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">mdi-filter-outline</v-icon></td>
+                  <td>
+                    <v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">
+                      mdi-filter-outline
+                    </v-icon>
+                  </td>
                   <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
                       scope="col">
                     <v-text-field
@@ -118,6 +125,7 @@
                       hide-details
                       label="Filter"
                       :reverse="h.align === 'right'"
+                      clearable
                     />
                   </td>
                 </tr>
@@ -144,23 +152,35 @@
         <v-col
           :style="'overflow: hidden; width: ' + navigationRight.width + 'px; flex-basis: ' + navigationRight.width + 'px'"
           ref="drawerRight"
-          class="ma-0 pt-0 pr-0"
+          class="ma-0 pt-0 pr-0 content-right"
+          transition="scale-transition"
+          :class="{ 'pl-0': detailsExpanded }"
         >
           <v-card>
             <v-toolbar
               v-if="!_.isEmpty($store.state.item) && !navigationRight.mini"
-              class="elevation-0"
+              class="elevation-0 mx-2"
               dense>
+              <v-toolbar-title>Details</v-toolbar-title>
               <v-spacer></v-spacer>
-              <v-btn
-                small
-                icon
-                @click="toogleRight"
-              >
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
+              <v-toolbar-items>
+                <v-btn
+                  small
+                  icon
+                  @click="expandDetails">
+                  <v-icon>mdi-arrow-all</v-icon>
+                </v-btn>
+                <v-btn
+                  small
+                  icon
+                  @click="closeLeft"
+                >
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-toolbar-items>
             </v-toolbar>
-            <transition name="fade">
+            <v-divider class="mx-0"></v-divider>
+            <transition name="scale-transition">
               <item v-show="!navigationRight.mini" :content="$store.state.item"/>
             </transition>
           </v-card>
@@ -171,313 +191,332 @@
 </template>
 
 <script>
-import { DateTime } from 'luxon';
-import item from '@/views/Document.vue';
+  import { DateTime } from 'luxon';
+  import item from '@/views/Document.vue';
 
-const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-export default {
+  export default {
 
-  name: 'items',
+    name: 'items',
 
-  components: {
-    item,
-  },
+    components: {
+      item,
+    },
 
-  data() {
-    return {
+    data() {
+      return {
 
-      itemscol: {},
+        itemscol: {},
+        detailsExpanded: false,
+        detailsHidden: true,
 
-      filter: {
-        table: this.$store.state.type,
-        columns: {},
-      },
+        filter: {
+          table: this.$store.state.type,
+          columns: {},
+        },
 
-      search: '',
-      active: [],
-      open: [],
-      refresh: true,
+        search: '',
+        active: [],
+        open: [],
+        refresh: true,
 
-      navigationLeft: {
-        mini: false,
-        shown: true,
-        width: 250,
-        oldWidth: 250,
-        borderSize: 3,
-      },
+        navigationLeft: {
+          type: 'left',
+          mini: false,
+          shown: true,
+          width: 250,
+          oldWidth: 250,
+          borderSize: 3,
+        },
 
-      navigationRight: {
-        mini: true,
-        shown: true,
-        width: 56,
-        oldWidth: 500,
-        borderSize: 3,
-      },
+        navigationRight: {
+          type: 'right',
+          mini: true,
+          shown: true,
+          width: 0,
+          oldWidth: 500,
+          borderSize: 3,
+        },
 
-      itemTypeIndex: 0,
-      loading: false,
-      options: {},
+        itemTypeIndex: 0,
+        loading: false,
+        options: {},
 
-      directories: [],
-    };
-  },
+        directories: [],
+      };
+    },
 
-  computed: {
+    computed: {
 
-    count() {
-      for (let i = 0; i < this.$store.state.tables.length; i += 1) {
-        if (this.$store.state.type === this.$store.state.tables[i].name) {
-          console.log(this.$store.state.tables[i]);
-          return this.$store.state.tables[i].count;
+      count() {
+        for (let i = 0; i < this.$store.state.tables.length; i += 1) {
+          if (this.$store.state.type === this.$store.state.tables[i].name) {
+            return this.$store.state.tables[i].count;
+          }
         }
-      }
-      return 0;
-    },
-
-    paneSize: {
-      get() {
-        return this.$store.state.listPane;
+        return 0;
       },
-      set(value) {
-        this.$store.commit('setlistPane', value);
+
+      paneSize: {
+        get() {
+          return this.$store.state.listPane;
+        },
+        set(value) {
+          this.$store.commit('setlistPane', value);
+        },
       },
+
     },
 
-  },
+    methods: {
 
-  methods: {
+      toggle(navigation) {
+        if (!navigation.mini) {
+          navigation.oldWidth = parseInt(navigation.width, 10);
+          if (navigation.type === 'left') {
+            navigation.width = 56;
+          } else {
+            navigation.width = 0;
+          }
+        }
+        navigation.mini = !navigation.mini;
 
-    toggle(navigation) {
-      if (!navigation.mini) {
-        navigation.oldWidth = parseInt(navigation.width, 10);
-        navigation.width = 80;
-      }
-      navigation.mini = !navigation.mini;
+        if (!navigation.mini) {
+          navigation.width = parseInt(navigation.oldWidth, 10);
+        }
+      },
 
-      if (!navigation.mini) {
-        navigation.width = parseInt(navigation.oldWidth, 10);
-      }
-    },
+      toogleLeft() {
+        this.toggle(this.navigationLeft);
+      },
 
-    toogleLeft() {
-      this.toggle(this.navigationLeft);
-    },
+      toogleRight() {
+        this.detailsHidden = !this.detailsHidden;
+        this.toggle(this.navigationRight);
+      },
 
-    toogleRight() {
-      this.toggle(this.navigationRight);
-    },
+      humanBytes(bytes, si) {
+        const thresh = si ? 1000 : 1024;
+        if (Math.abs(bytes) < thresh) {
+          return `${bytes}B`;
+        }
+        const units = si
+          ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+          : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        let u = -1;
+        do {
+          bytes /= thresh;
+          u += 1;
+        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return `${bytes.toFixed(1)}${units[u]}`;
+      },
 
-    humanBytes(bytes, si) {
-      const thresh = si ? 1000 : 1024;
-      if (Math.abs(bytes) < thresh) {
-        return `${bytes}B`;
-      }
-      const units = si
-        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-      let u = -1;
-      do {
-        bytes /= thresh;
-        u += 1;
-      } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-      return `${bytes.toFixed(1)}${units[u]}`;
-    },
+      forceRefresh() {
+        this.refresh = false;
+        this.$nextTick(() => {
+          this.refresh = true;
+        });
+      },
 
-    forceRefresh() {
-      this.refresh = false;
-      this.$nextTick(() => {
-        this.refresh = true;
-      });
-    },
+      closeLeft() {
+        if (this.detailsExpanded) {
+          this.toogleRight();
+          this.detailsExpanded = !this.detailsExpanded;
+        } else {
+          this.toogleRight();
+        }
+      },
 
-    async getDirectories() {
-      const that = this;
-      if (this.directories.length === 0) {
-        this.$store.dispatch('loadDirectories', { path: '' })
+      async getDirectories() {
+        const that = this;
+        if (this.directories.length === 0) {
+          this.$store.dispatch('loadDirectories', { path: '' })
+            .then((response) => {
+              for (let i = 0; i < response.length; i += 1) {
+                if (response[i].name !== '/') {
+                  that.directories.push(response[i]);
+                }
+              }
+            })
+            .catch(error => console.warn(error));
+
+          console.log('INITIAL: ', JSON.stringify(this.directories, null, 1));
+        }
+      },
+
+      async loadList(table) {
+
+        this.detailsExpanded = false;
+        this.detailsHidden = true;
+        this.directories = [];
+        this.itemscol = {};
+        this.active = [];
+        this.open = [];
+
+        this.$store.commit('setItem', {});
+        if (!this.navigationRight.mini) {
+          this.toogleRight();
+        }
+        this.$store.commit('setTable', table);
+        this.$store.dispatch('loadItems')
+          .then(() => {
+            for (let i = 0; i < this.$store.state.headers.length; i += 1) {
+              this.itemscol[this.$store.state.headers[i].value] = '';
+            }
+
+            this.getDirectories();
+            this.forceRefresh();
+
+            this.filter = {
+              table: this.$store.state.type,
+              columns: {},
+            };
+          });
+      },
+
+      select(e) {
+        this.$store.commit('setItem', e);
+        if (this.navigationRight.mini) {
+          this.toogleRight();
+        }
+      },
+
+      toLocal(s) {
+        return DateTime.fromISO(s)
+          .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
+      },
+
+      updateopt(e) {
+        this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
+        this.$store.commit('setLimit', e.itemsPerPage);
+        const sort = {
+          table: this.$store.state.type,
+          columns: {},
+        };
+        for (let i = 0; i < e.sortBy.length; i += 1) {
+          if (e.sortDesc[i]) {
+            sort.columns[e.sortBy[i]] = 'DESC';
+          } else {
+            sort.columns[e.sortBy[i]] = 'ASC';
+          }
+        }
+
+        this.$store.commit('setSort', sort);
+        this.$store.dispatch('loadItems');
+      },
+
+      updatedir(e) {
+        let slash = '';
+        let column = '';
+        const { type } = this.$store.state;
+
+        if (type === 'directory') {
+          slash = '/';
+          column = 'path';
+        } else if (type === 'file') {
+          slash = '/';
+          column = 'origin.path';
+        } else if (type === 'windows-registry-key') {
+          slash = '\\';
+          column = 'key';
+        } else {
+          console.log('TABLE DOES NOT EXIST!');
+        }
+
+        if (e.length === 0) {
+          this.filter.table = type;
+          this.filter.columns[column] = [];
+        } else {
+          this.filter.table = type;
+          this.filter.columns[column] = [e[0] + slash];
+        }
+
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+      },
+
+      searchFilter() {
+        this.filter.table = this.$store.state.type;
+
+        let column = '';
+
+        for (const key in this.itemscol) {
+          const value = this.itemscol[key];
+          if (key === 'origin') {
+            column = 'origin.path';
+          } else {
+            column = key;
+          }
+          this.filter.columns[column] = [value];
+        }
+
+        this.filter.columns.elements = [this.search];
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+      },
+
+      clearFilter() {
+        this.search = '';
+        this.searchFilter();
+      },
+
+      expandDetails() {
+        if (!this.detailsExpanded) {
+          this.detailsExpanded = true;
+        } else {
+          this.detailsExpanded = false;
+        }
+      },
+
+      async fetchTreeChildren(item) {
+        const directories = [];
+
+        this.$store.dispatch('loadDirectories', { path: item.path })
           .then((response) => {
-            for (let i = 0; i < response.length; i += 1) {
-              if (response[i].name !== '/') {
-                that.directories.push(response[i]);
+            if ((response.length === 1) && (response[0].name === '/')) {
+              delete item.children;
+            } else {
+              for (let i = 0; i < response.length; i += 1) {
+                if (response[i].name !== '/') {
+                  directories.push(response[i]);
+                }
               }
             }
           })
           .catch(error => console.warn(error));
 
-        console.log('INITIAL: ', JSON.stringify(this.directories, null, 1));
-      }
-    },
+        await pause(1000);
 
-    async loadList(table) {
-      this.directories = [];
+        const key = item.path;
+        const parentNode = this.$refs.treeView.nodes[key];
 
-      this.itemscol = {};
-
-      this.active = [];
-      this.open = [];
-
-      this.$store.commit('setItem', {});
-      if (!this.navigationRight.mini) {
-        this.toogleRight();
-      }
-      this.$store.commit('setTable', table);
-      this.$store.dispatch('loadItems')
-        .then(() => {
-          for (let i = 0; i < this.$store.state.headers.length; i += 1) {
-            this.itemscol[this.$store.state.headers[i].value] = '';
-          }
-
-          this.getDirectories();
-          this.forceRefresh();
-
-          this.filter = {
-            table: this.$store.state.type,
-            columns: {},
+        let childNode;
+        directories.forEach((child) => {
+          childNode = {
+            ...parentNode,
+            item: child,
+            vnode: null,
           };
+          this.$refs.treeView.nodes[child.path] = childNode;
         });
-    },
 
-    select(e) {
-      this.$store.commit('setItem', e);
-      if (this.navigationRight.mini) {
-        this.toogleRight();
-      }
-    },
-
-    toLocal(s) {
-      return DateTime.fromISO(s)
-        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
-    },
-
-    updateopt(e) {
-      console.log('updateopt', e);
-      this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
-      this.$store.commit('setLimit', e.itemsPerPage);
-      const sort = {
-        table: this.$store.state.type,
-        columns: {},
-      };
-      for (let i = 0; i < e.sortBy.length; i += 1) {
-        if (e.sortDesc[i]) {
-          sort.columns[e.sortBy[i]] = 'DESC';
-        } else {
-          sort.columns[e.sortBy[i]] = 'ASC';
+        for (let i = 0; i < directories.length; i += 1) {
+          item.children.push(directories[i]);
         }
-      }
+      },
 
-      this.$store.commit('setSort', sort);
-      this.$store.dispatch('loadItems');
     },
 
-    updatedir(e) {
-      console.log('updatedir', e);
-      console.log(JSON.stringify(this.directories, null, 1));
-
-      let slash = '';
-      let column = '';
-      const { type } = this.$store.state;
-
-      if (type === 'directory') {
-        console.log('DIR');
-        slash = '/';
-        column = 'path';
-      } else if (type === 'file') {
-        console.log('FILE');
-        slash = '/';
-        column = 'origin.path';
-      } else if (type === 'windows-registry-key') {
-        console.log('KEY');
-        slash = '\\';
-        column = 'key';
-      } else {
-        console.log('TABLE DOES NOT EXIST!');
-      }
-
-      if (e.length === 0) {
-        this.filter.table = type;
-        this.filter.columns[column] = [];
-      } else {
-        this.filter.table = type;
-        this.filter.columns[column] = [e[0] + slash];
-      }
-
-      this.$store.commit('setFilter', this.filter);
-      this.$store.dispatch('loadItems');
+    mounted() {
+      this.getDirectories();
     },
 
-    searchFilter() {
-      this.filter.table = this.$store.state.type;
-
-      let column = '';
-
-      for (const key in this.itemscol) {
-        const value = this.itemscol[key];
-        if (key === 'origin') {
-          column = 'origin.path';
-        } else {
-          column = key;
-        }
-        this.filter.columns[column] = [value];
-      }
-
-      this.filter.columns.elements = [this.search];
-      this.$store.commit('setFilter', this.filter);
-      this.$store.dispatch('loadItems');
+    destroyed() {
+      this.$store.commit('setItem', {});
     },
 
-    clearFilter() {
-      this.search = '';
-      this.searchFilter();
-    },
-
-    async fetchTreeChildren(item) {
-      const directories = [];
-
-      this.$store.dispatch('loadDirectories', { path: item.path })
-        .then((response) => {
-          if ((response.length === 1) && (response[0].name === '/')) {
-            delete item.children;
-          } else {
-            for (let i = 0; i < response.length; i += 1) {
-              if (response[i].name !== '/') {
-                directories.push(response[i]);
-              }
-            }
-          }
-        })
-        .catch(error => console.warn(error));
-
-      await pause(1000);
-
-      const key = item.path;
-      const parentNode = this.$refs.treeView.nodes[key];
-
-      let childNode;
-      directories.forEach((child) => {
-        childNode = {
-          ...parentNode,
-          item: child,
-          vnode: null,
-        };
-        this.$refs.treeView.nodes[child.path] = childNode;
-      });
-
-      for (let i = 0; i < directories.length; i += 1) {
-        item.children.push(directories[i]);
-      }
-    },
-
-  },
-
-  mounted() {
-    this.getDirectories();
-  },
-
-  destroyed() {
-    this.$store.commit('setItem', {});
-  },
-
-};
+  };
 
 
 </script>
@@ -486,6 +525,7 @@ export default {
 
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
+  @import '../styles/animations.scss'
 
   table tr td
     cursor: pointer !important
@@ -496,8 +536,9 @@ export default {
   .fade-enter-active, .fade-leave-active
     transition: opacity .2s
 
-  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
-    opacity: 0
+  .fade-enter, .fade-leave-to
+  /* .fade-leave-active below version 2.1.8 */
+     opacity: 0
 
   .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label
     font-size: 0.8125rem
@@ -525,7 +566,16 @@ export default {
     margin-top: 6px
 
   .v-list--dense .v-subheader
-    font-size: 1rem
+    font-size: 0.75rem
     font-weight: bold
+
+  .v-input .v-label
+    font-size: 12px
+
+  .content-left
+    transition: $transition-fast
+
+  .content-right
+    transition: $transition-fast
 
 </style>
