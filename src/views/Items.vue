@@ -9,15 +9,21 @@
       <div class="d-flex justify-end">
         <v-btn small icon @click="toogleLeft">
           <v-icon class="navigationDrawerIcon"
-                  :class="{'rotate180': !leftExtended}">mdi-chevron-left</v-icon>
+                  :class="{'rotate180': !leftExtended}">mdi-chevron-left
+          </v-icon>
         </v-btn>
       </div>
 
       <v-list dense>
-        <v-subheader :class="{'pl-4': leftExtended}" class="navigationHeader tr-2" >
-          <a v-show="leftExtended">TYPE</a>
+        <v-subheader class="navigationHeader tr-2">
+          <transition name="fade-fast">
+            <a v-show="leftExtended" class="pl-4">TYPE</a>
+          </transition>
           <v-spacer></v-spacer>
-          <v-subheader class="tr-2"><v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type</v-icon></v-subheader>
+          <v-subheader class="tr-2">
+            <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type
+            </v-icon>
+          </v-subheader>
         </v-subheader>
         <hr class="divider"/>
         <v-list-item-group v-model="itemTypeIndex" color="primary">
@@ -52,41 +58,49 @@
       </v-list>
       <v-list class="mt-2" dense>
         <v-list-item-group>
-          <v-subheader :class="{'pl-4': leftExtended}" class="navigationHeader tr-2" >
-            <a v-show="leftExtended">LOCATION</a>
+          <v-subheader class="navigationHeader tr-2">
+            <transition name="fade-fast">
+              <a v-show="leftExtended" class="pl-4">LOCATION</a>
+            </transition>
             <v-spacer></v-spacer>
-            <v-subheader class="tr-2"><v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon></v-subheader>
+            <v-subheader class="tr-2">
+              <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
+            </v-subheader>
           </v-subheader>
           <hr class="divider"/>
-          <v-icon
-            class="tr-2"
-            style="margin-left: 16px"
-            v-show="!leftExtended">
-            mdi-dots-horizontal
-          </v-icon>
-          <v-treeview
-            class="tr-2"
-            v-show="refresh && directories.length > 0 && leftExtended"
-            activatable
-            hoverable
-            dense
-            transition
-            @update:active="updatedir"
-            :active.sync="active"
-            :items="directories"
-            :load-children="fetchTreeChildren"
-            :open.sync="open"
-            item-key="path"
-            color="primary"
-            ref="treeView"
-          >
-            <template v-slot:prepend="{ item, open }">
-              <v-icon v-if="item.children">
-                {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+          <transition name="fade-slow" mode="out-in">
+            <div v-if="!leftExtended" key="dots">
+              <v-icon class="tr-2"
+                      style="margin-left: 16px">
+                mdi-dots-horizontal
               </v-icon>
-              <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-            </template>
-          </v-treeview>
+            </div>
+            <div v-else key="tree">
+              <v-treeview
+                class="tr-2"
+                v-show="refresh && directories.length > 0 && leftExtended"
+                activatable
+                hoverable
+                dense
+                transition
+                @update:active="updatedir"
+                :active.sync="active"
+                :items="directories"
+                :load-children="fetchTreeChildren"
+                :open.sync="open"
+                item-key="path"
+                color="primary"
+                ref="treeView"
+              >
+                <template v-slot:prepend="{ item, open }">
+                  <v-icon v-if="item.children">
+                    {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                  </v-icon>
+                  <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
+                </template>
+              </v-treeview>
+            </div>
+          </transition>
         </v-list-item-group>
       </v-list>
     </div>
@@ -184,7 +198,8 @@
               icon
               @click="expandDetails">
               <v-icon v-if="this.rightWidth === 50" class="detailsIcon">mdi-fullscreen</v-icon>
-              <v-icon v-if="this.rightWidth === 100" class="detailsIcon">mdi-fullscreen-exit</v-icon>
+              <v-icon v-if="this.rightWidth === 100" class="detailsIcon">mdi-fullscreen-exit
+              </v-icon>
             </v-btn>
             <v-btn
               small
@@ -203,7 +218,7 @@
 </template>
 
 <script>
-  import {DateTime} from 'luxon';
+  import { DateTime } from 'luxon';
   import item from '@/views/Document.vue';
 
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -259,22 +274,22 @@
 
       toogleLeft() {
         if (this.leftWidth !== 56) {
-          this.leftWidth = 56
-          this.leftExtended = false
+          this.leftWidth = 56;
+          this.leftExtended = false;
         } else {
-          this.leftWidth = 250
-          this.leftExtended = true
+          this.leftWidth = 250;
+          this.leftExtended = true;
         }
       },
 
       rightNull() {
-        this.rightWidth = 0
+        this.rightWidth = 0;
       },
       rightHalf() {
-        this.rightWidth = 50
+        this.rightWidth = 50;
       },
       rightFull() {
-        this.rightWidth = 100
+        this.rightWidth = 100;
       },
 
       humanBytes(bytes, si) {
@@ -302,7 +317,7 @@
 
       title(element) {
         if (_.has(this.$store.state.templates, element['type'])) {
-          return element[this.$store.state.templates[element['type']].headers[0].value]
+          return element[this.$store.state.templates[element['type']].headers[0].value];
         }
         if (_.has(element, 'name')) {
           return element['name'];
@@ -313,13 +328,13 @@
         if (_.has(element, 'title')) {
           return element['title'];
         }
-        return "";
+        return '';
       },
 
       async getDirectories() {
         const that = this;
         if (this.directories.length === 0) {
-          this.$store.dispatch('loadDirectories', {path: ''})
+          this.$store.dispatch('loadDirectories', { path: '' })
             .then((response) => {
               for (let i = 0; i < response.length; i += 1) {
                 if (response[i].name !== '/') {
@@ -358,8 +373,8 @@
       },
 
       emptyFilter() {
-        console.log("empty");
-        Vue.$set(this, "itemscol", {});
+        console.log('empty');
+        Vue.$set(this, 'itemscol', {});
         this.searchFilter();
       },
 
@@ -395,7 +410,7 @@
       updatedir(e) {
         let slash = '';
         let column = '';
-        const {type} = this.$store.state;
+        const { type } = this.$store.state;
 
         if (type === 'directory') {
           slash = '/';
@@ -449,7 +464,7 @@
 
       expandDetails() {
         if (this.rightWidth === 100) {
-          this.rightHalf()
+          this.rightHalf();
         } else {
           this.rightFull();
         }
@@ -458,7 +473,7 @@
       async fetchTreeChildren(item) {
         const directories = [];
 
-        this.$store.dispatch('loadDirectories', {path: item.path})
+        this.$store.dispatch('loadDirectories', { path: item.path })
           .then((response) => {
             if ((response.length === 1) && (response[0].name === '/')) {
               delete item.children;
@@ -522,13 +537,6 @@
   .verticalbar
     transition: width .2s
 
-  .fade-enter-active, .fade-leave-active
-    transition: opacity .2s
-
-  .fade-enter, .fade-leave-to
-  /* .fade-leave-active below version 2.1.8 */
-     opacity: 0
-
   .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label
     font-size: 0.8125rem
 
@@ -544,7 +552,7 @@
 
   .v-data-table--fixed-header .v-data-table__wrapper
     overflow-y: hidden
-    // overflow-wrap: anywhere
+  // overflow-wrap: anywhere
 
   .v-list-item__icon
     min-width: max-content
@@ -586,6 +594,7 @@
 
   .detailsIcon
     padding: 8px
+
     &:hover
       color: $c-pink !important
       animation: swing
@@ -611,6 +620,28 @@
   .navigationMenuIcon
     color: $c-pink !important
     transition: $transition-fast !important
+
+  .fade-fast-enter,
+  .fade-fast-leave-to
+    visibility: hidden
+    width: 0
+    opacity: 0
+    padding-left: 0
+    overflow-wrap: unset !important
+    white-space: nowrap !important
+
+  .fade-fast-enter-active,
+  .fade-fast-leave-active
+    transition: all 100ms
+
+  .fade-slow-enter,
+  .fade-slow-leave-to
+    visibility: hidden
+    opacity: 0
+
+  .fade-slow-enter-active,
+  .fade-slow-leave-active
+    transition: all .25s ease-in-out
 
   .tf-1
     transition: $transition-fastest
