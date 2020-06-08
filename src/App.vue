@@ -22,46 +22,45 @@ Author(s): Jonas Plum, Kadir Aslan
 -->
 
 <template>
-  <v-app :style="{background: $vuetify.theme.themes[theme].background}" :class="scrollbarTheme">
+  <v-app :style="{background: $vuetify.theme.themes[theme].background}">
     <v-app-bar color="sidebar"
-               dark
                app
                flat
+               dark
                dense
-               height="96px"
-               clipped-left>
-      <v-container fluid>
-        <v-layout class="d-flex justify-space-between" row>
-          <v-toolbar-title style="margin-top: 9px" class="mr-8 ml-4">Elementary</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-title style="margin-top: 12px" class="mr-8 ml-4 body-1">
-            md1rejuc_2020-05-11T14-05-57.forensicstore
-          </v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-items class="toolbarItems">
-            <v-btn class="primary--text" text>Cases</v-btn>
-            <v-btn text>Upload</v-btn>
-          </v-toolbar-items>
-          <v-btn icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
-            <v-icon>mdi-invert-colors</v-icon>
-          </v-btn>
-        </v-layout>
-        <v-layout row>
-          <v-toolbar color="appbar" dense class="elevation-1">
-            <v-toolbar-items>
-              <v-btn class="subToolbarButton"
-                     color="toolbar" v-for="(name, route) in menu" :key="name"
-                     @click="$router.push(route)"
-                     :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
-                {{name}}
-              </v-btn>
-            </v-toolbar-items>
-          </v-toolbar>
-        </v-layout>
-      </v-container>
+               extended>
+      <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
+      <v-spacer/>
+      <v-toolbar-title class="mr-8 ml-4 body-1">
+        md1rejuc_2020-05-11T14-05-57.forensicstore
+      </v-toolbar-title>
+      <v-spacer/>
+      <v-toolbar-items>
+        <v-btn class="primary--text" text>Cases</v-btn>
+        <v-btn text>Upload</v-btn>
+      </v-toolbar-items>
+      <v-btn class="mr-3" icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+        <v-icon>mdi-invert-colors</v-icon>
+      </v-btn>
     </v-app-bar>
     <v-content>
-      <router-view/>
+      <v-card class="mx-3 mb-3" style="margin-top: -48px; z-index: 10">
+        <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12);">
+          <v-tab v-for="(menuitem, route) in menu" :key="menuitem.name"
+                 @click="$router.push(route)"
+                 :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+            <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
+            {{menuitem.name}}
+          </v-tab>
+          <v-spacer/>
+          <v-tab v-for="(menuitem, route) in rmenu" :key="menuitem.name"
+                         @click="$router.push(route)">
+              <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
+              {{ menuitem.name }}
+          </v-tab>
+        </v-tabs>
+        <router-view/>
+      </v-card>
     </v-content>
   </v-app>
 </template>
@@ -76,24 +75,18 @@ Author(s): Jonas Plum, Kadir Aslan
       return {
         drawer: {},
         menu: {
-          task: 'Tasks',
-          items: 'Elements',
-          logs: 'Logs',
-          // 'workflows': 'Workflows',
+          items: {name: 'Elements', icon: 'periodic-table'},
+          files: {name: 'Files', icon: 'file-tree'},
+          tasks: {name: 'Tasks', icon: 'checkbox-marked-outline'},
+        },
+        rmenu: {
+          errors: {name: 'Errors', icon: 'alert'},
+          logs: {name: 'Logs', icon: 'script-text-outline'},
         },
       };
     },
     computed: {
       theme() {
-        return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
-      },
-      dark() {
-        return Vuetify.framework.theme.dark;
-      },
-      light() {
-        return !Vuetify.framework.theme.dark;
-      },
-      scrollbarTheme() {
         return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
       },
     },
@@ -103,19 +96,19 @@ Author(s): Jonas Plum, Kadir Aslan
   };
 </script>
 
-<style lang="scss">
-
-  @import './styles/colors.scss';
-  @import './styles/animations.scss';
-  @import '~animate.css';
+<style>
 
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #B0BEC5;
   }
 
-  h1, h2, h3, .v-toolbar, .title {
+  h1, h2, h3, .v-toolbar__title, .title {
     font-family: 'Roboto-Slab', serif;
+  }
+
+  .v-toolbar .v-btn__content {
+    font-weight: 400 !important;
   }
 
   .v-btn--fab {
@@ -144,80 +137,7 @@ Author(s): Jonas Plum, Kadir Aslan
   }
 
   .primary--text {
-    color: $c-pink;
+    color: #d9045d;
   }
-
-  .subToolbarButton {
-    transition: $transition-faster;
-    &:hover {
-      color: $c-pink !important;
-      animation: rubberBand;
-      animation-duration: 0.6s;
-    }
-  }
-
-  /*::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: $c-midnight;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-track-piece {
-    background: $c-shadow;
-    border-radius: 10px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background-color: $c-pink;
-    height: 50px;
-    border-radius: 10px;
-    border: none;
-  }
-
-  ::-webkit-scrollbar-corner {
-    background: none;
-  }*/
-
-  /*::-webkit-scrollbar {
-    width: 15px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #e6e6e6;
-    border-left: 1px solid #dadada;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #b0b0b0;
-    border: solid 3px #e6e6e6;
-    border-radius: 7px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: black;
-  }
-
-  /*.dark::-webkit-scrollbar {
-    width: 15px;
-  }
-
-  .dark::-webkit-scrollbar-track {
-    background: #202020;
-    border-left: 1px solid #2c2c2c;
-  }
-
-  .dark::-webkit-scrollbar-thumb {
-    background: #3e3e3e;
-    border: solid 3px #202020;
-    border-radius: 7px;
-  }
-
-  .dark::-webkit-scrollbar-thumb:hover {
-    background: white;
-  }*/
 
 </style>

@@ -31,7 +31,7 @@ export default new Vuex.Store({
   state: {
     tables: [],
 
-    type: 'file',
+    type: '',
     items: [],
     itemCount: 0,
     all: [],
@@ -63,6 +63,10 @@ export default new Vuex.Store({
   },
 
   mutations: {
+
+    setType(state, data) {
+      state.type = data;
+    },
 
     setLimit(state, data) {
       state.limit = data;
@@ -102,9 +106,9 @@ export default new Vuex.Store({
       };
 
       if (data.length !== 0 && 'type' in data[0]) {
-        state.type = data[0].type;
+        // state.type = data[0].type;
         if (data[0].type in state.templates && 'headers' in state.templates[data[0].type]) {
-          state.headers = state.templates[data[0].type].headers;
+          state.headers = state.templates[state.type].headers;
         } else {
           state.headers = calcHeaders();
         }
@@ -183,6 +187,7 @@ export default new Vuex.Store({
       console.log(url);
 
       invoke('GET', url, [], (items) => {
+        commit('setType', state.type);
         commit('setItems', items.elements);
         commit('setItemCount', items.count);
       });
@@ -203,6 +208,7 @@ export default new Vuex.Store({
           slash = '\\';
         } else {
           console.log('TABLE DOES NOT EXIST!');
+          return
         }
 
         if ((state.type === 'windows-registry-key') && (payload.path === '')) {

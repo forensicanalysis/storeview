@@ -23,6 +23,10 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import items from '../views/Items.vue';
 import file from '../views/File.vue';
+import files from '../views/Files.vue';
+import tasks from '../views/Tasks.vue';
+import logs from '../views/Logs.vue';
+import errors from '../views/Errors.vue';
 
 Vue.use(VueRouter);
 
@@ -32,9 +36,29 @@ const routes = [
     redirect: '/items',
   },
   {
+    path: '/tasks',
+    name: 'tasks',
+    component: tasks,
+  },
+  {
     path: '/items',
     name: 'items',
     component: items,
+  },
+  {
+    path: '/files',
+    name: 'files',
+    component: files,
+  },
+  {
+    path: '/logs',
+    name: 'logs',
+    component: logs,
+  },
+  {
+    path: '/errors',
+    name: 'errors',
+    component: errors,
   },
   {
     path: '/file',
