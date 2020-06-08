@@ -8,11 +8,18 @@
     >
       <div class="d-flex justify-end">
         <v-btn small icon @click="toogleLeft">
-          <v-icon>mdi-chevron-left</v-icon>
+          <v-icon class="navigationDrawerIcon"
+                  :class="{'rotate180': !leftExtended}">mdi-chevron-left</v-icon>
         </v-btn>
       </div>
+
       <v-list dense>
-        <v-subheader>Type</v-subheader>
+        <v-subheader :class="{'pl-4': leftExtended}" class="navigationHeader tr-2" >
+          <a v-show="leftExtended">TYPE</a>
+          <v-spacer></v-spacer>
+          <v-subheader class="tr-2"><v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type</v-icon></v-subheader>
+        </v-subheader>
+        <hr class="divider"/>
         <v-list-item-group v-model="itemTypeIndex" color="primary">
           <v-list-item @click="loadList('')">
             <v-list-item-icon>
@@ -37,7 +44,7 @@
             <v-list-item-content>
               <v-list-item-title v-text="_.startCase(table.name)"/>
             </v-list-item-content>
-            <v-list-item-icon>
+            <v-list-item-icon v-show="leftExtended">
               <span v-if="'count' in table">{{table['count']}}</span>
             </v-list-item-icon>
           </v-list-item>
@@ -45,9 +52,21 @@
       </v-list>
       <v-list class="mt-2" dense>
         <v-list-item-group>
-          <v-subheader>Location</v-subheader>
+          <v-subheader :class="{'pl-4': leftExtended}" class="navigationHeader tr-2" >
+            <a v-show="leftExtended">LOCATION</a>
+            <v-spacer></v-spacer>
+            <v-subheader class="tr-2"><v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon></v-subheader>
+          </v-subheader>
+          <hr class="divider"/>
+          <v-icon
+            class="tr-2"
+            style="margin-left: 16px"
+            v-show="!leftExtended">
+            mdi-dots-horizontal
+          </v-icon>
           <v-treeview
-            v-if="refresh && directories.length > 0"
+            class="tr-2"
+            v-show="refresh && directories.length > 0 && leftExtended"
             activatable
             hoverable
             dense
@@ -112,7 +131,8 @@
                   mdi-filter-remove-outline
                 </v-icon>
               </td>
-              <td v-for="h in $store.state.headers" :key="h.text" role="columnheader"
+              <td v-for="h in $store.state.headers"
+                  :key="h.text" role="columnheader"
                   scope="col">
                 <v-text-field
                   v-model="itemscol[h.value]"
@@ -154,7 +174,7 @@
       >
         <v-toolbar
           v-if="!_.isEmpty($store.state.item)"
-          class="elevation-0 mx-2"
+          class="elevation-0 ml-2 mr-0"
           dense>
           <v-toolbar-title>{{ $store.state.item.id }}</v-toolbar-title>
           <v-spacer/>
@@ -163,14 +183,15 @@
               small
               icon
               @click="expandDetails">
-              <v-icon>mdi-fullscreen</v-icon>
+              <v-icon v-if="this.rightWidth === 50" class="detailsIcon">mdi-fullscreen</v-icon>
+              <v-icon v-if="this.rightWidth === 100" class="detailsIcon">mdi-fullscreen-exit</v-icon>
             </v-btn>
             <v-btn
               small
               icon
               @click="rightNull"
             >
-              <v-icon>mdi-close</v-icon>
+              <v-icon class="detailsIcon">mdi-close</v-icon>
             </v-btn>
           </v-toolbar-items>
         </v-toolbar>
@@ -198,6 +219,7 @@
     data() {
       return {
 
+        leftExtended: true,
         itemscol: {},
         rightWidth: 0,
         leftWidth: 250,
@@ -238,8 +260,10 @@
       toogleLeft() {
         if (this.leftWidth !== 56) {
           this.leftWidth = 56
+          this.leftExtended = false
         } else {
           this.leftWidth = 250
+          this.leftExtended = true
         }
       },
 
@@ -487,6 +511,7 @@
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
   @import '../styles/animations.scss'
+  @import '~animate.css'
 
   table tr td
     cursor: pointer !important
@@ -495,7 +520,7 @@
     border-radius: 0 !important
 
   .verticalbar
-      transition: width .2s
+    transition: width .2s
 
   .fade-enter-active, .fade-leave-active
     transition: opacity .2s
@@ -519,6 +544,7 @@
 
   .v-data-table--fixed-header .v-data-table__wrapper
     overflow-y: hidden
+    // overflow-wrap: anywhere
 
   .v-list-item__icon
     min-width: max-content
@@ -536,10 +562,77 @@
   .v-input .v-label
     font-size: 12px
 
+  .navigationDrawerIcon
+    transition: $transition-fast
+    -moz-transition: $transition-fast
+    -webkit-transition: $transition-fast
+
+    &:hover
+      background: none !important
+      box-shadow: none !important
+      transition: $transition-fast
+      color: $c-pink !important
+
+  .rotate180
+    -ms-transform-origin: 50% 50%
+    -webkit-transform-origin: 50% 50%
+    -moz-transform-origin: 50% 50%
+    transform-origin: 50% 50%
+    transform: rotate(180deg)
+    -moz-transform: rotate(180deg)
+    -webkit-transform: rotate(180deg)
+    -o-transform: rotate(180deg)
+    -ms-transform: rotate(180deg)
+
+  .detailsIcon
+    padding: 8px
+    &:hover
+      color: $c-pink !important
+      animation: swing
+      animation-duration: 0.4s
+
   .content-left
     transition: $transition-fast
 
   .content-right
     transition: $transition-fast
+
+  .divider
+    margin-top: 3px
+    margin-bottom: 0
+    border: 0
+    width: 100%
+    border-top: 1px solid $c-pink
+
+  .navigationHeader
+    font-size: 14px !important
+    font-weight: 400 !important
+
+  .navigationMenuIcon
+    color: $c-pink !important
+    transition: $transition-fast !important
+
+  .tf-1
+    transition: $transition-fastest
+
+  .tf-2
+    transition: $transition-faster
+
+  .tf-3
+    transition: $transition-fast
+
+  .tf-4
+    transition: $transition-slow
+
+  .tf-5
+    transition: $transition-slower
+
+  .tf-6
+    transition: $transition-slowest
+
+  .o-0
+    opacity: 0
+    width: 0 !important
+    white-space: nowrap !important
 
 </style>
