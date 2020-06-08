@@ -38,7 +38,7 @@ Author(s): Jonas Plum, Kadir Aslan
             md1rejuc_2020-05-11T14-05-57.forensicstore
           </v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-toolbar-items>
+          <v-toolbar-items class="toolbarItems">
             <v-btn class="primary--text" text>Cases</v-btn>
             <v-btn text>Upload</v-btn>
           </v-toolbar-items>
@@ -49,7 +49,8 @@ Author(s): Jonas Plum, Kadir Aslan
         <v-layout row>
           <v-toolbar color="appbar" dense class="elevation-1">
             <v-toolbar-items>
-              <v-btn color="toolbar" v-for="(name, route) in menu" :key="name"
+              <v-btn class="subToolbarButton"
+                     color="toolbar" v-for="(name, route) in menu" :key="name"
                      @click="$router.push(route)"
                      :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
                 {{name}}
@@ -86,6 +87,12 @@ Author(s): Jonas Plum, Kadir Aslan
       theme() {
         return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
       },
+      dark() {
+        return Vuetify.framework.theme.dark;
+      },
+      light() {
+        return !Vuetify.framework.theme.dark;
+      },
       scrollbarTheme() {
         return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
       },
@@ -99,6 +106,8 @@ Author(s): Jonas Plum, Kadir Aslan
 <style lang="scss">
 
   @import './styles/colors.scss';
+  @import './styles/animations.scss';
+  @import '~animate.css';
 
   body {
     font-family: 'Roboto', sans-serif;
@@ -135,7 +144,16 @@ Author(s): Jonas Plum, Kadir Aslan
   }
 
   .primary--text {
-    color: #d9045d;
+    color: $c-pink;
+  }
+
+  .subToolbarButton {
+    transition: $transition-faster;
+    &:hover {
+      color: $c-pink !important;
+      animation: rubberBand;
+      animation-duration: 0.6s;
+    }
   }
 
   /*::-webkit-scrollbar {

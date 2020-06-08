@@ -29,7 +29,10 @@ Author(s): Jonas Plum
       prev-icon="mdi-menu-left"
       show-arrows>
       <v-tabs-slider/>
-      <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
+      <v-tab :class="detailsTabMenu"
+             v-for="view in views"
+             :key="view['title']"
+             :href="'#tab-'+_.lowerCase(view['title'])">
         {{view['title']}}
         <v-icon>mdi-{{view['icon']}}</v-icon>
       </v-tab>
@@ -80,6 +83,7 @@ Author(s): Jonas Plum
 import pdf from 'vue-pdf';
 import { component as VueCodeHighlight } from 'vue-code-highlight';
 import JsonToHtml from '@/components/json-to-html.vue';
+import Vuetify from '../plugins/vuetify';
 
 export default {
   name: 'item',
@@ -107,6 +111,23 @@ export default {
       page: 1,
       loaded: false,
     };
+  },
+  computed: {
+    detailsTabMenu() {
+      return {
+        'detailsTabMenuDark': Vuetify.framework.theme.dark,
+        'detailsTabMenuLight': !Vuetify.framework.theme.dark
+      }
+    },
+    theme() {
+      return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+    },
+    dark() {
+      return Vuetify.framework.theme.dark;
+    },
+    light() {
+      return !Vuetify.framework.theme.dark;
+    },
   },
   watch: {
     content() {
@@ -174,9 +195,27 @@ export default {
 </script>
 
 <style lang="sass">
+
+  @import '~animate.css'
+  @import '../styles/colors.scss'
+  @import '../styles/animations.scss'
+
   .v-slide-group.v-item-group > .v-slide-group__next, .v-slide-group.v-item-group > .v-slide-group__prev
     min-width: 0
     .theme--light.v-icon
       &:hover
-        color: #d9045d
+        color: $c-pink
+
+  .detailsTabMenuLight
+    transition: $transition-fastest
+    &:hover
+      font-size: 18px
+      color: $c-shadow !important
+
+  .detailsTabMenuDark
+    transition: $transition-fastest
+    &:hover
+      font-size: 18px
+      color: $c-pink !important
+
 </style>

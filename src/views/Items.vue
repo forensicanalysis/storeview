@@ -66,23 +66,23 @@
           </v-list-item-group>
         </v-list>
       </div>
-      <v-card class="mt-2 d-flex justify-end"
-              style="position: absolute; bottom: 0; right: 0; width: 100%">
-        <v-btn
-          small
-          icon
-          right
-          @click="toogleLeft"
-        >
-          <v-icon>mdi-menu</v-icon>
-        </v-btn>
-      </v-card>
+      <v-col
+        align-self="end"
+      >
+          <v-icon class="navigationDrawerIcon"
+                  :class="{'rotate180': navigationLeft.mini}"
+                  @click="toogleLeft">mdi-chevron-left
+          </v-icon>
+      </v-col>
+
     </v-navigation-drawer>
     <v-container fluid :class="{'pr-0': !this.detailsExpanded && this.detailsHidden}">
       <v-row class="ma-0" style="flex-wrap: nowrap;">
-        <v-layout style="display: -webkit-box !important; width: 100%"
-                  class="flex-grow-1 flex-shrink-1 pb-3 content-left"
-                  v-show="!detailsExpanded">
+        <!--        <v-col style="display: -webkit-box !important; width: 100%; flex-basis: 100% !important"-->
+        <!--               class="flex-grow-1 flex-shrink-1 pb-3 content-left pa-0"-->
+        <!--               v-show="!detailsExpanded">-->
+        <v-col class="flex-shrink-1 pb-3 content-left pa-0"
+               :class="dataTable">
           <v-card class="pt-3">
             <v-text-field
               v-model="search"
@@ -113,7 +113,7 @@
               <template v-slot:body.prepend>
                 <tr>
                   <td>
-                    <v-icon style="font-size: 16px; margin-left: 4px; color: #ed3c54">
+                    <v-icon style="font-size: 16px; margin-left: 4px; color: #ED3C54">
                       mdi-filter-outline
                     </v-icon>
                   </td>
@@ -148,7 +148,7 @@
               </template>
             </v-data-table>
           </v-card>
-        </v-layout>
+        </v-col>
         <v-col
           :style="'overflow: hidden; width: ' + navigationRight.width + 'px; flex-basis: ' + navigationRight.width + 'px'"
           ref="drawerRight"
@@ -159,7 +159,7 @@
           <v-card>
             <v-toolbar
               v-if="!_.isEmpty($store.state.item) && !navigationRight.mini"
-              class="elevation-0 mx-2"
+              class="elevation-0 ml-2 mr-0"
               dense>
               <v-toolbar-title>Details</v-toolbar-title>
               <v-spacer></v-spacer>
@@ -168,14 +168,14 @@
                   small
                   icon
                   @click="expandDetails">
-                  <v-icon>mdi-arrow-all</v-icon>
+                  <v-icon class="detailsIcon">mdi-arrow-all</v-icon>
                 </v-btn>
                 <v-btn
                   small
                   icon
                   @click="closeLeft"
                 >
-                  <v-icon>mdi-close</v-icon>
+                  <v-icon class="detailsIcon">mdi-close</v-icon>
                 </v-btn>
               </v-toolbar-items>
             </v-toolbar>
@@ -193,6 +193,7 @@
 <script>
   import { DateTime } from 'luxon';
   import item from '@/views/Document.vue';
+  import Vuetify from '../plugins/vuetify';
 
   const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -248,6 +249,26 @@
     },
 
     computed: {
+
+      dataTable() {
+        return {
+          'dataTableVisible': !this.detailsExpanded,
+          'flex-grow-1': !this.detailsExpanded,
+          'dataTableInvisible': this.detailsExpanded
+        };
+      },
+
+      theme() {
+        return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+      },
+
+      dark() {
+        return Vuetify.framework.theme.dark;
+      },
+
+      light() {
+        return !Vuetify.framework.theme.dark;
+      },
 
       count() {
         for (let i = 0; i < this.$store.state.tables.length; i += 1) {
@@ -526,6 +547,7 @@
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
   @import '../styles/animations.scss'
+  @import '~animate.css'
 
   table tr td
     cursor: pointer !important
@@ -578,5 +600,60 @@
 
   .content-right
     transition: $transition-fast
+
+  .navigationDrawerIcon
+    transition: $transition-slower
+    -moz-transition: 0.5s ease-in-out
+    -webkit-transition: 0.5s ease-in-out
+    display: inline-block
+    position: absolute
+    bottom: 0
+    right: 0
+    width: 100%
+    background: none !important
+    box-shadow: none
+    font-size: 30px
+    margin: 0 !important
+
+    &:hover
+      color: $c-pink
+
+  .rotate180
+    -ms-transform-origin: 50% 50%
+    -webkit-transform-origin: 50% 50%
+    -moz-transform-origin: 50% 50%
+    transform-origin: 50% 50%
+    transform: rotate(180deg)
+    -moz-transform: rotate(180deg)
+    -webkit-transform: rotate(180deg)
+    -o-transform: rotate(180deg)
+    -ms-transform: rotate(180deg)
+
+  /*.navigationDrawerIconHoverNarrow
+    &:hover
+      color: $c-pink !important
+      animation: swing !important
+      animation-duration: 0.5s
+
+  /*.navigationDrawerIconHoverWide
+    &:hover
+      color: $c-pink !important
+      animation: swing !important
+      animation-duration: 0.5s
+
+  .dataTableVisible
+    width: 100%
+    flex-basis: 100% !important
+
+  .dataTableInvisible
+    width: 0 !important
+    flex-basis: 0 !important
+    flex-grow: 0 !important
+
+  .detailsIcon
+    &:hover
+      color: $c-pink !important
+      animation: swing
+      animation-duration: 0.4s
 
 </style>
