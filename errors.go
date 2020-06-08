@@ -19,33 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-import Vue from 'vue';
-import Vuetify from 'vuetify/lib';
+package main
 
-import colors from 'vuetify/lib/util/colors';
+import (
+	"io"
+	"net/http"
 
+	"github.com/spf13/pflag"
 
-Vue.use(Vuetify);
+	"github.com/forensicanalysis/forensicstore"
+	"github.com/forensicanalysis/storeview/cobraserver"
+)
 
-export default new Vuetify({
-  theme: {
-    themes: {
-      light: {
-        primary: colors.red.lighten1,
-        appbar: colors.grey.lighten5,
-        sidebar: colors.blueGrey.darken3,
-        secondary: colors.blue.lighten1,
-        accent: colors.pink.darken2,
-        background: colors.blueGrey.lighten5,
-        toolbar: '#000',
-      },
-      dark: {
-        primary: colors.red.lighten1,
-        secondary: colors.blue.lighten1,
-        primaryText: colors.red.lighten1,
-        toolbar: '#FFF',
-        sidebar: colors.grey.darken4,
-      },
-    },
-  },
-});
+func errorsCommand() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listErrors",
+		Route:  "/errors",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
+
+			elements, err := store.Query("SELECT json FROM elements WHERE json_extract(json, '$.errors') != ''")
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
+		},
+	}
+}

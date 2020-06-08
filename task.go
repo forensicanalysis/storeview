@@ -19,33 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-import Vue from 'vue';
-import Vuetify from 'vuetify/lib';
+package main
 
-import colors from 'vuetify/lib/util/colors';
+import (
+	"io"
+	"net/http"
 
+	"github.com/spf13/pflag"
 
-Vue.use(Vuetify);
+	"github.com/forensicanalysis/forensicworkflows/cmd"
+	"github.com/forensicanalysis/storeview/cobraserver"
+)
 
-export default new Vuetify({
-  theme: {
-    themes: {
-      light: {
-        primary: colors.red.lighten1,
-        appbar: colors.grey.lighten5,
-        sidebar: colors.blueGrey.darken3,
-        secondary: colors.blue.lighten1,
-        accent: colors.pink.darken2,
-        background: colors.blueGrey.lighten5,
-        toolbar: '#000',
-      },
-      dark: {
-        primary: colors.red.lighten1,
-        secondary: colors.blue.lighten1,
-        primaryText: colors.red.lighten1,
-        toolbar: '#FFF',
-        sidebar: colors.grey.darken4,
-      },
-    },
-  },
-});
+func listTasks() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listTasks",
+		Route:  "/tasks",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			// f.String("directory", "/", "current directory")
+			// f.String("type", "file", "item type")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+
+			runCmd := cmd.Run()
+			commands := runCmd.Commands()
+			var children []string
+			for _, command := range commands {
+				children = append(children, command.Name())
+			}
+
+			return cobraserver.PrintAny(w, children)
+		},
+	}
+}

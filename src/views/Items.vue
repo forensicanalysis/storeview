@@ -1,30 +1,40 @@
 <template>
-  <div>
-    <v-navigation-drawer
-      app
-      clipped
-      stateless
-      :width="navigationLeft.width"
-      v-model="navigationLeft.shown"
+  <div class="d-flex flex-row" style="width: 100%">
+    <div
       ref="drawerLeft"
-      style="overflow: visible"
+      class="flex-grow-0 flex-shrink-0 verticalbar"
+      :style="'width: ' + leftWidth + 'px'"
+      style="border-right: 1px solid rgba(0, 0, 0, 0.12)"
     >
-      <v-btn
-        color="pink"
-        fab
-        dark
-        small
-        absolute
-        top
-        right
-        @click="toogleLeft"
-        style="margin-top: 25px; margin-right: -35px;"
-      >
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
-      <v-list class="mt-6" dense>
-        <v-subheader>Type</v-subheader>
+      <div class="d-flex justify-end">
+        <v-btn small icon @click="toogleLeft">
+          <v-icon class="navigationDrawerIcon"
+                  :class="{'rotate180': !leftExtended}">mdi-chevron-left
+          </v-icon>
+        </v-btn>
+      </div>
+
+      <v-list dense>
+        <v-subheader class="navigationHeader tr-2">
+          <transition name="fade-fast">
+            <a v-show="leftExtended" class="pl-4">TYPE</a>
+          </transition>
+          <v-spacer></v-spacer>
+          <v-subheader class="tr-2">
+            <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type
+            </v-icon>
+          </v-subheader>
+        </v-subheader>
+        <hr class="divider"/>
         <v-list-item-group v-model="itemTypeIndex" color="primary">
+          <v-list-item @click="loadList('')">
+            <v-list-item-icon>
+              <v-icon>mdi-file-multiple</v-icon>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title>All</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
           <v-list-item
             v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
             :key="i"
@@ -32,553 +42,628 @@
             class="px-4"
           >
             <v-list-item-icon>
-              <v-icon v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+              <v-icon
+                v-if="_.has($store.state.templates[table['name']], 'icon')"
+                v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+              <v-icon v-else>mdi-file-outline</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title v-text="_.startCase(table.name)"/>
             </v-list-item-content>
-            <v-list-item-icon>
+            <v-list-item-icon v-show="leftExtended">
               <span v-if="'count' in table">{{table['count']}}</span>
             </v-list-item-icon>
           </v-list-item>
-          <v-subheader>Location</v-subheader>
-          <v-treeview
-            v-if="refresh && directories.length > 0"
-            activatable
-            hoverable
-            dense
-            transition
-            @update:active="updatedir"
-            :active.sync="active"
-            :items="directories"
-            :load-children="fetchTreeChildren"
-            :open.sync="open"
-            item-key="path"
-            color="primary"
-            ref="treeView"
-          >
-            <template v-slot:prepend="{ item, open }">
-              <v-icon v-if="item.children">
-                {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-              </v-icon>
-              <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-            </template>
-          </v-treeview>
         </v-list-item-group>
       </v-list>
-    </v-navigation-drawer>
-
-    <v-text-field
-      v-model="search"
-      :append-icon="'mdi-send'"
-      outlined
-      clear-icon="mdi-close-circle"
-      clearable
-      label="Search"
-      type="text"
-      @keyup.enter.native="searchFilter"
-      @click:append="searchFilter"
-      @click:clear="clearFilter"
-    ></v-text-field>
-
-    <v-card class="mt-10" outlined style="margin-top: 3px !important;">
-      <v-data-table
-        :headers="$store.state.headers"
-        :items="$store.state.items"
-        :loading="loading"
-        :options.sync="options"
-        :server-items-length="$store.state.itemCount"
-        @update:options="updateopt"
-        dense
-        :fixed-header="true"
-        multi-sort
-        @click:row="select"
-        :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-      >
-        <template v-slot:body.prepend>
-          <tr>
-            <td v-for="h in $store.state.headers" :key="h.text" role="columnheader" scope="col">
-              <v-text-field
-                v-model="itemscol[h.value]"
-                @keyup.enter.native="searchFilter"
-                hide-details
-                label="Filter"
+      <v-list class="mt-2" dense>
+        <v-list-item-group>
+          <v-subheader class="navigationHeader tr-2">
+            <transition name="fade-fast">
+              <a v-show="leftExtended" class="pl-4">LOCATION</a>
+            </transition>
+            <v-spacer></v-spacer>
+            <v-subheader class="tr-2">
+              <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
+            </v-subheader>
+          </v-subheader>
+          <hr class="divider"/>
+          <transition name="fade-slow" mode="out-in">
+            <div v-if="!leftExtended" key="dots">
+              <v-icon class="tr-2"
+                      style="margin-left: 16px">
+                mdi-dots-horizontal
+              </v-icon>
+            </div>
+            <div v-else key="tree">
+              <v-treeview
+                class="tr-2"
+                v-show="refresh && directories.length > 0 && leftExtended"
+                activatable
+                hoverable
                 dense
-              />
-            </td>
-          </tr>
-        </template>
-
-        <template v-slot:item.atime="{ item }">
-          <div>{{ toLocal(item.atime) }}</div>
-        </template>
-        <template v-slot:item.mtime="{ item }">
-          <div>{{ toLocal(item.mtime) }}</div>
-        </template>
-        <template v-slot:item.ctime="{ item }">
-          <div>{{ toLocal(item.ctime) }}</div>
-        </template>
-        <template v-slot:item.origin="{ item }">
-          <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
-        </template>
-        <template v-slot:item.size="{ item }">
-          <div>{{ humanBytes(item.size, true) }}</div>
-        </template>
-      </v-data-table>
-    </v-card>
-    <v-navigation-drawer
-      app
-      clipped
-      right
-      stateless
-      :width="navigationRight.width"
-      v-model="navigationRight.shown"
-      ref="drawerRight"
-      style="overflow: visible;"
-    >
-      <v-btn
-        v-if="!_.isEmpty($store.state.item)"
-        color="pink"
-        fab
-        dark
-        small
-        absolute
-        top
-        left
-        @click="toogleRight"
-        style="margin-top: 25px; margin-left: -35px;"
+                transition
+                @update:active="updatedir"
+                :active.sync="active"
+                :items="directories"
+                :load-children="fetchTreeChildren"
+                :open.sync="open"
+                item-key="path"
+                color="primary"
+                ref="treeView"
+              >
+                <template v-slot:prepend="{ item, open }">
+                  <v-icon v-if="item.children">
+                    {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                  </v-icon>
+                  <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
+                </template>
+              </v-treeview>
+            </div>
+          </transition>
+        </v-list-item-group>
+      </v-list>
+    </div>
+    <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
+      <div style="overflow-x: scroll; transition: width 0.2s ease-in"
+           class="pt-3 flex-shrink-1 flex-grow-1"
       >
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
-      <transition name="fade">
-        <item v-show="!navigationRight.mini" :content="$store.state.item"/>
-      </transition>
-    </v-navigation-drawer>
+        <v-text-field
+          v-model="search"
+          prepend-inner-icon="mdi-magnify"
+          clear-icon="mdi-close-circle"
+          clearable
+          dense
+          outlined
+          @keyup.enter.native="searchFilter"
+          @click:append="searchFilter"
+          @click:clear="clearFilter"
+          class="mx-3"
+        />
+        <v-data-table
+          :headers="$store.state.headers"
+          :items="$store.state.items"
+          :loading="loading"
+          :options.sync="options"
+          :server-items-length="$store.state.itemCount"
+          @update:options="updateopt"
+          :fixed-header="true"
+          @click:row="select"
+          :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+          :items-per-page="50"
+          show-select
+          style="overflow: visible !important;"
+          dense
+        >
+          <template v-slot:body.prepend>
+            <tr>
+              <td>
+                <v-icon v-if="_.isEmpty(filter.columns)" color="primary" small class="ml-1">
+                  mdi-filter-outline
+                </v-icon>
+                <v-icon v-else color="primary" small class="ml-1" @click="emptyFilter">
+                  mdi-filter-remove-outline
+                </v-icon>
+              </td>
+              <td v-for="h in $store.state.headers"
+                  :key="h.text" role="columnheader"
+                  scope="col">
+                <v-text-field
+                  v-model="itemscol[h.value]"
+                  @keyup.enter.native="searchFilter"
+                  hide-details
+                  label="Filter"
+                  :reverse="h.align === 'right'"
+                  clearable
+                />
+              </td>
+            </tr>
+          </template>
+
+          <template v-slot:item.title="{ item }">
+            <div>{{ title(item) }}</div>
+          </template>
+          <template v-slot:item.atime="{ item }">
+            <div>{{ toLocal(item.atime) }}</div>
+          </template>
+          <template v-slot:item.mtime="{ item }">
+            <div>{{ toLocal(item.mtime) }}</div>
+          </template>
+          <template v-slot:item.ctime="{ item }">
+            <div>{{ toLocal(item.ctime) }}</div>
+          </template>
+          <template v-slot:item.origin="{ item }">
+            <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
+          </template>
+          <template v-slot:item.size="{ item }">
+            <div>{{ humanBytes(item.size, true) }}</div>
+          </template>
+        </v-data-table>
+      </div>
+      <div
+        :style="'width: ' + rightWidth + '%'"
+        style="border-left: 1px solid rgba(0, 0, 0, 0.12)"
+        class="flex-grow-0 flex-shrink-0 verticalbar"
+        ref="drawerRight"
+      >
+        <v-toolbar
+          v-if="!_.isEmpty($store.state.item)"
+          class="elevation-0 ml-2 mr-0"
+          dense>
+          <v-toolbar-title>{{ $store.state.item.id }}</v-toolbar-title>
+          <v-spacer/>
+          <v-toolbar-items>
+            <v-btn
+              small
+              icon
+              @click="expandDetails">
+              <v-icon v-if="this.rightWidth === 50" class="detailsIcon">mdi-fullscreen</v-icon>
+              <v-icon v-if="this.rightWidth === 100" class="detailsIcon">mdi-fullscreen-exit
+              </v-icon>
+            </v-btn>
+            <v-btn
+              small
+              icon
+              @click="rightNull"
+            >
+              <v-icon class="detailsIcon">mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        <v-divider class="mx-0"/>
+        <item :content="$store.state.item"/>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { DateTime } from 'luxon';
-import item from '@/views/Document.vue';
+  import { DateTime } from 'luxon';
+  import item from '@/views/Document.vue';
 
-const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-export default {
+  export default {
 
-  name: 'items',
+    name: 'items',
 
-  components: {
-    item,
-  },
+    components: {
+      item,
+    },
 
-  data() {
-    return {
+    data() {
+      return {
 
-      itemscol: {},
+        leftExtended: true,
+        itemscol: {},
+        rightWidth: 0,
+        leftWidth: 250,
 
-      filter: {
-        table: this.$store.state.type,
-        columns: {},
-      },
+        filter: {
+          table: this.$store.state.type,
+          columns: {},
+        },
 
-      search: '',
-      active: [],
-      open: [],
-      refresh: true,
+        search: '',
+        active: [],
+        open: [],
+        refresh: true,
 
-      navigationLeft: {
-        mini: false,
-        shown: true,
-        width: 250,
-        oldWidth: 250,
-        borderSize: 3,
-      },
+        itemTypeIndex: 0,
+        loading: false,
+        options: {},
 
-      navigationRight: {
-        mini: true,
-        shown: true,
-        width: 56,
-        oldWidth: 500,
-        borderSize: 3,
-      },
+        directories: [],
+      };
+    },
 
-      itemTypeIndex: 0,
-      loading: false,
-      options: {},
+    computed: {
 
-      directories: []
-    };
-  },
-
-  computed: {
-
-    count() {
-      for (let i = 0; i < this.$store.state.tables.length; i += 1) {
-        if (this.$store.state.type === this.$store.state.tables[i].name) {
-          console.log(this.$store.state.tables[i]);
-          return this.$store.state.tables[i].count;
+      count() {
+        for (let i = 0; i < this.$store.state.tables.length; i += 1) {
+          if (this.$store.state.type === this.$store.state.tables[i].name) {
+            return this.$store.state.tables[i].count;
+          }
         }
-      }
-      return 0;
-    },
-
-    directionLeft() {
-      return this.navigationLeft.shown === false ? 'Open' : 'Closed';
-    },
-
-    directionRight() {
-      return this.navigationLeft.shown === false ? 'Open' : 'Closed';
-    },
-
-    paneSize: {
-      get() {
-        return this.$store.state.listPane;
+        return 0;
       },
-      set(value) {
-        this.$store.commit('setlistPane', value);
+
+    },
+
+    methods: {
+
+      toogleLeft() {
+        if (this.leftWidth !== 56) {
+          this.leftWidth = 56;
+          this.leftExtended = false;
+        } else {
+          this.leftWidth = 250;
+          this.leftExtended = true;
+        }
       },
-    },
 
-  },
+      rightNull() {
+        this.rightWidth = 0;
+      },
+      rightHalf() {
+        this.rightWidth = 50;
+      },
+      rightFull() {
+        this.rightWidth = 100;
+      },
 
-  methods: {
+      humanBytes(bytes, si) {
+        const thresh = si ? 1000 : 1024;
+        if (Math.abs(bytes) < thresh) {
+          return `${bytes}B`;
+        }
+        const units = si
+          ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+          : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        let u = -1;
+        do {
+          bytes /= thresh;
+          u += 1;
+        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return `${bytes.toFixed(1)}${units[u]}`;
+      },
 
-    toggle(navigation) {
-      if (!navigation.mini) {
-        navigation.oldWidth = parseInt(navigation.width, 10);
-        navigation.width = 56;
-      }
-      navigation.mini = !navigation.mini;
+      forceRefresh() {
+        this.refresh = false;
+        this.$nextTick(() => {
+          this.refresh = true;
+        });
+      },
 
-      if (!navigation.mini) {
-        navigation.width = parseInt(navigation.oldWidth, 10);
-      }
-    },
+      title(element) {
+        if (_.has(this.$store.state.templates, element['type'])) {
+          return element[this.$store.state.templates[element['type']].headers[0].value];
+        }
+        if (_.has(element, 'name')) {
+          return element['name'];
+        }
+        if (_.has(element, 'key')) {
+          return element['key'];
+        }
+        if (_.has(element, 'title')) {
+          return element['title'];
+        }
+        return '';
+      },
 
-    toogleLeft() {
-      this.toggle(this.navigationLeft);
-    },
+      async getDirectories() {
+        const that = this;
+        if (this.directories.length === 0) {
+          this.$store.dispatch('loadDirectories', { path: '' })
+            .then((response) => {
+              for (let i = 0; i < response.length; i += 1) {
+                if (response[i].name !== '/') {
+                  that.directories.push(response[i]);
+                }
+              }
+            })
+            .catch(error => console.warn(error));
+        }
+      },
 
-    toogleRight() {
-      this.toggle(this.navigationRight);
-    },
+      async loadList(table) {
 
-    setBorderWidthLeft() {
-      const i = this.$refs.drawerLeft.$el.querySelector(
-        '.v-navigation-drawer__border',
-      );
-      i.style.width = `${this.navigationLeft.borderSize}px`;
-      i.style.cursor = 'ew-resize';
-    },
+        this.directories = [];
+        this.itemscol = {};
+        this.active = [];
+        this.open = [];
 
-    setBorderWidthRight() {
-      const i = this.$refs.drawerRight.$el.querySelector(
-        '.v-navigation-drawer__border',
-      );
-      i.style.width = `${this.navigationRight.borderSize}px`;
-      i.style.cursor = 'ew-resize';
-    },
-
-    setEventsAll() {
-      this.setEvents(this.$refs.drawerLeft.$el, this.navigationLeft);
-      this.setEvents(this.$refs.drawerRight.$el, this.navigationRight);
-    },
-
-    setEvents(el, navigation) {
-      const minSize = navigation.borderSize;
-      const drawerBorder = el.querySelector('.v-navigation-drawer__border');
-      const direction = el.classList.contains('v-navigation-drawer--right')
-        ? 'right'
-        : 'left';
-
-      function resize(e) {
-        document.body.style.cursor = 'ew-resize';
-        const f = direction === 'right'
-          ? document.body.scrollWidth - e.clientX
-          : e.clientX;
-        el.style.width = `${f}px`;
-      }
-
-      drawerBorder.addEventListener(
-        'mousedown',
-        (e) => {
-          if (e.offsetX < minSize) {
-            // m_pos = e.x;
-            if (navigation.mini) {
-              return false;
+        this.$store.commit('setItem', {});
+        this.rightNull();
+        this.$store.commit('setTable', table);
+        this.$store.dispatch('loadItems')
+          .then(() => {
+            for (let i = 0; i < this.$store.state.headers.length; i += 1) {
+              this.itemscol[this.$store.state.headers[i].value] = '';
             }
 
-            el.style.transition = 'initial';
-            document.addEventListener('mousemove', resize, false);
+            this.getDirectories();
+            this.forceRefresh();
+
+            this.filter = {
+              table: this.$store.state.type,
+              columns: {},
+            };
+          });
+      },
+
+      emptyFilter() {
+        console.log('empty');
+        Vue.$set(this, 'itemscol', {});
+        this.searchFilter();
+      },
+
+      select(e) {
+        this.$store.commit('setItem', e);
+        this.rightHalf();
+      },
+
+      toLocal(s) {
+        return DateTime.fromISO(s)
+          .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
+      },
+
+      updateopt(e) {
+        this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
+        this.$store.commit('setLimit', e.itemsPerPage);
+        const sort = {
+          table: this.$store.state.type,
+          columns: {},
+        };
+        for (let i = 0; i < e.sortBy.length; i += 1) {
+          if (e.sortDesc[i]) {
+            sort.columns[e.sortBy[i]] = 'DESC';
+          } else {
+            sort.columns[e.sortBy[i]] = 'ASC';
           }
-        },
-        false,
-      );
+        }
 
-      document.addEventListener(
-        'mouseup',
-        () => {
-          el.style.transition = '';
-          navigation.width = el.style.width;
+        this.$store.commit('setSort', sort);
+        this.$store.dispatch('loadItems');
+      },
 
-          /*  console.log(el.style.width);
-            if (parseInt(el.style.width, 10) > 80) {
-              console.log('false');
-              navigation.mini = false;
-            } */
+      updatedir(e) {
+        let slash = '';
+        let column = '';
+        const { type } = this.$store.state;
 
-          document.body.style.cursor = '';
-          document.removeEventListener('mousemove', resize, false);
-        },
-        false,
-      );
-    },
+        if (type === 'directory') {
+          slash = '/';
+          column = 'path';
+        } else if (type === 'file') {
+          slash = '/';
+          column = 'origin.path';
+        } else if (type === 'windows-registry-key') {
+          slash = '\\';
+          column = 'key';
+        } else {
+          console.log('TABLE DOES NOT EXIST!');
+        }
 
-    humanBytes(bytes, si) {
-      const thresh = si ? 1000 : 1024;
-      if (Math.abs(bytes) < thresh) {
-        return `${bytes}B`;
-      }
-      const units = si
-        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-      let u = -1;
-      do {
-        bytes /= thresh;
-        u += 1;
-      } while (Math.abs(bytes) >= thresh && u < units.length - 1);
-      return `${bytes.toFixed(1)}${units[u]}`;
-    },
+        if (e.length === 0) {
+          this.filter.table = type;
+          this.filter.columns[column] = [];
+        } else {
+          this.filter.table = type;
+          this.filter.columns[column] = [e[0] + slash];
+        }
 
-    forceRefresh() {
-      this.refresh = false;
-      this.$nextTick(() => {
-        this.refresh = true;
-      });
-    },
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+      },
 
-    async getDirectories() {
-      var that = this;
-      if (this.directories.length === 0) {
+      searchFilter() {
+        this.filter.table = this.$store.state.type;
 
-        this.$store.dispatch('loadDirectories', { path: '' })
+        let column = '';
+
+        for (const key in this.itemscol) {
+          const value = this.itemscol[key];
+          if (key === 'origin') {
+            column = 'origin.path';
+          } else {
+            column = key;
+          }
+          this.filter.columns[column] = [value];
+        }
+
+        this.filter.columns.elements = [this.search];
+        this.$store.commit('setFilter', this.filter);
+        this.$store.dispatch('loadItems');
+      },
+
+      clearFilter() {
+        this.search = '';
+        this.searchFilter();
+      },
+
+      expandDetails() {
+        if (this.rightWidth === 100) {
+          this.rightHalf();
+        } else {
+          this.rightFull();
+        }
+      },
+
+      async fetchTreeChildren(item) {
+        const directories = [];
+
+        this.$store.dispatch('loadDirectories', { path: item.path })
           .then((response) => {
-            for (let i = 0; i < response.length; i += 1) {
-              if (response[i].name !== '/') {
-                that.directories.push(response[i]);
+            if ((response.length === 1) && (response[0].name === '/')) {
+              delete item.children;
+            } else {
+              for (let i = 0; i < response.length; i += 1) {
+                if (response[i].name !== '/') {
+                  directories.push(response[i]);
+                }
               }
             }
           })
           .catch(error => console.warn(error));
 
-        console.log('INITIAL: ', JSON.stringify(this.directories, null, 1));
-      }
-    },
+        await pause(1000);
 
-    async loadList(table) {
-      this.directories = [];
+        const key = item.path;
+        const parentNode = this.$refs.treeView.nodes[key];
 
-      this.itemscol = {};
-
-      this.active = [];
-      this.open = [];
-
-      this.$store.commit('setItem', {});
-      if (!this.navigationRight.mini) {
-        this.toogleRight();
-      }
-      this.$store.commit('setTable', table);
-      this.$store.dispatch('loadItems')
-        .then(() => {
-          for (let i = 0; i < this.$store.state.headers.length; i += 1) {
-            this.itemscol[this.$store.state.headers[i].value] = "";
-          }
-
-          this.getDirectories();
-          this.forceRefresh();
-
-          this.filter = {
-            table: this.$store.state.type,
-            columns: {},
+        let childNode;
+        directories.forEach((child) => {
+          childNode = {
+            ...parentNode,
+            item: child,
+            vnode: null,
           };
+          this.$refs.treeView.nodes[child.path] = childNode;
         });
-    },
 
-    select(e) {
-      this.$store.commit('setItem', e);
-      if (this.navigationRight.mini) {
-        this.toogleRight();
-      }
-    },
-
-    toLocal(s) {
-      return DateTime.fromISO(s)
-        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS);
-    },
-
-    updateopt(e) {
-      console.log('updateopt', e);
-      this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
-      this.$store.commit('setLimit', e.itemsPerPage);
-      const sort = {
-        table: this.$store.state.type,
-        columns: {},
-      };
-      for (let i = 0; i < e.sortBy.length; i += 1) {
-        if (e.sortDesc[i]) {
-          sort.columns[e.sortBy[i]] = 'DESC';
-        } else {
-          sort.columns[e.sortBy[i]] = 'ASC';
+        for (let i = 0; i < directories.length; i += 1) {
+          item.children.push(directories[i]);
         }
-      }
+      },
 
-      this.$store.commit('setSort', sort);
-      this.$store.dispatch('loadItems');
     },
 
-    updatedir(e) {
-      console.log('updatedir', e);
-      console.log(JSON.stringify(this.directories, null, 1));
-
-      let slash = '';
-      let column = '';
-      const { type } = this.$store.state;
-
-      if (type === 'directory') {
-        console.log('DIR');
-        slash = '/';
-        column = 'path';
-      } else if (type === 'file') {
-        console.log('FILE');
-        slash = '/';
-        column = 'origin.path';
-      } else if (type === 'windows-registry-key') {
-        console.log('KEY');
-        slash = '\\';
-        column = 'key';
-      } else {
-        console.log('TABLE DOES NOT EXIST!');
-      }
-
-      if (e.length === 0) {
-        this.filter.table = type;
-        this.filter.columns[column] = [];
-      } else {
-        this.filter.table = type;
-        this.filter.columns[column] = [e[0] + slash];
-      }
-
-      this.$store.commit('setFilter', this.filter);
-      this.$store.dispatch('loadItems');
+    mounted() {
+      this.getDirectories();
     },
 
-    searchFilter() {
-      this.filter.table = this.$store.state.type;
-
-      let column = '';
-
-      for (const key in this.itemscol) {
-        const value = this.itemscol[key];
-        if (key === 'origin') {
-          column = 'origin.path';
-        } else {
-          column = key;
-        }
-        this.filter.columns[column] = [value];
-      }
-
-      this.filter.columns['elements'] = [this.search];
-      this.$store.commit('setFilter', this.filter);
-      this.$store.dispatch('loadItems');
+    destroyed() {
+      this.$store.commit('setItem', {});
     },
 
-    clearFilter() {
-      this.search = '';
-      this.searchFilter();
-    },
-
-    async fetchTreeChildren(item) {
-      const directories = [];
-
-      this.$store.dispatch('loadDirectories', { path: item.path })
-        .then((response) => {
-          if ((response.length === 1) && (response[0].name === '/')) {
-            delete item.children;
-          } else {
-            for (let i = 0; i < response.length; i += 1) {
-              if (response[i].name !== '/') {
-                directories.push(response[i]);
-              }
-            }
-          }
-        })
-        .catch(error => console.warn(error));
-
-      await pause(1000);
-
-      const key = item.path;
-      const parentNode = this.$refs.treeView.nodes[key];
-
-      let childNode;
-      directories.forEach((child) => {
-        childNode = {
-          ...parentNode,
-          item: child,
-          vnode: null,
-        };
-        this.$refs.treeView.nodes[child.path] = childNode;
-      });
-
-      for (let i = 0; i < directories.length; i += 1) {
-        item.children.push(directories[i]);
-      }
-    },
-
-  },
-
-  mounted() {
-    this.setBorderWidthLeft();
-    this.setBorderWidthRight();
-    this.setEventsAll();
-    this.getDirectories();
-  },
-
-  destroyed() {
-    this.$store.commit('setItem', {});
-  },
-
-};
+  };
 
 
 </script>
 
-<style>
-  table tr td {
-    cursor: pointer !important;
-  }
+<style lang="sass">
+  @import '~vuetify/src/styles/styles.sass'
+  @import '../styles/colors.scss'
+  @import '../styles/animations.scss'
+  @import '~animate.css'
 
-  * {
-    border-radius: 0 !important;
-  }
+  table tr td
+    cursor: pointer !important
 
-  .fade-enter-active, .fade-leave-active {
-    transition: opacity .2s;
-  }
+  *
+    border-radius: 0 !important
 
-  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */
-  {
-    opacity: 0;
-  }
+  .verticalbar
+    transition: width .2s
 
-  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label {
-    font-size: 0.8125rem;
-  }
+  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label
+    font-size: 0.8125rem
 
-  .v-data-table .v-label--active {
-    opacity: 0;
-  }
+  .v-data-table .v-label--active
+    opacity: 0
 
-  .v-data-table .v-text-field>.v-input__control>.v-input__slot:before {
-    border-style: none;
-  }
+  .v-data-table .v-text-field > .v-input__control > .v-input__slot:before
+    border-style: none
+
+  .v-text-field
+    padding-top: 0
+    margin-top: 0
+
+  .v-data-table--fixed-header .v-data-table__wrapper
+    overflow-y: hidden
+  // overflow-wrap: anywhere
+
+  .v-list-item__icon
+    min-width: max-content
+    font-size: 12px
+    line-height: 2
+
+  .v-application--is-ltr .v-list-item__icon:first-child
+    margin-right: 8px
+    margin-top: 6px
+
+  .v-list--dense .v-subheader
+    font-size: 0.75rem
+    font-weight: bold
+
+  .v-input .v-label
+    font-size: 12px
+
+  .navigationDrawerIcon
+    transition: $transition-fast
+    -moz-transition: $transition-fast
+    -webkit-transition: $transition-fast
+
+    &:hover
+      background: none !important
+      box-shadow: none !important
+      transition: $transition-fast
+      color: $c-pink !important
+
+  .rotate180
+    -ms-transform-origin: 50% 50%
+    -webkit-transform-origin: 50% 50%
+    -moz-transform-origin: 50% 50%
+    transform-origin: 50% 50%
+    transform: rotate(180deg)
+    -moz-transform: rotate(180deg)
+    -webkit-transform: rotate(180deg)
+    -o-transform: rotate(180deg)
+    -ms-transform: rotate(180deg)
+
+  .detailsIcon
+    padding: 8px
+
+    &:hover
+      color: $c-pink !important
+      animation: swing
+      animation-duration: 0.4s
+
+  .content-left
+    transition: $transition-fast
+
+  .content-right
+    transition: $transition-fast
+
+  .divider
+    margin-top: 3px
+    margin-bottom: 0
+    border: 0
+    width: 100%
+    border-top: 1px solid $c-pink
+
+  .navigationHeader
+    font-size: 14px !important
+    font-weight: 400 !important
+
+  .navigationMenuIcon
+    color: $c-pink !important
+    transition: $transition-fast !important
+
+  .fade-fast-enter,
+  .fade-fast-leave-to
+    visibility: hidden
+    width: 0
+    opacity: 0
+    padding-left: 0
+    overflow-wrap: unset !important
+    white-space: nowrap !important
+
+  .fade-fast-enter-active,
+  .fade-fast-leave-active
+    transition: all 100ms
+
+  .fade-slow-enter,
+  .fade-slow-leave-to
+    visibility: hidden
+    opacity: 0
+
+  .fade-slow-enter-active,
+  .fade-slow-leave-active
+    transition: all .25s ease-in-out
+
+  .tf-1
+    transition: $transition-fastest
+
+  .tf-2
+    transition: $transition-faster
+
+  .tf-3
+    transition: $transition-fast
+
+  .tf-4
+    transition: $transition-slow
+
+  .tf-5
+    transition: $transition-slower
+
+  .tf-6
+    transition: $transition-slowest
+
+  .o-0
+    opacity: 0
+    width: 0 !important
+    white-space: nowrap !important
+
 </style>

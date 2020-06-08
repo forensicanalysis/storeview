@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@mdi/font": "^3.6.95",
+    "animate.css": "^4.1.0",
     "axios": "^0.19.0",
     "core-js": "^3.4.3",
     "d3": "^5.14.2",
@@ -63,7 +64,8 @@
     "rules": {
       "no-console": "off",
       "no-unused-vars": "off",
-      "no-param-reassign": "off"
+      "no-param-reassign": "off",
+      "import/extensions": "off"
     },
     "parserOptions": {
       "parser": "babel-eslint"
