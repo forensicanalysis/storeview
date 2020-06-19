@@ -12,14 +12,14 @@
     >
       <template v-slot:body.prepend>
         <tr>
-          <td>
+          <td class="filterIcon" @click="emptyFilter">
             <v-icon
-              v-if="(timeFilter === '' ) && (fileFilter === '' ) && (messageFilter === '' )"
+              v-if="checkFiltersEmpty"
               color="primary"
               small class="ml-1">
               mdi-filter-outline
             </v-icon>
-            <v-icon v-else color="primary" small class="ml-1" @click="emptyFilter">
+            <v-icon v-else color="primary" small class="ml-1" >
               mdi-filter-remove-outline
             </v-icon>
           </td>
@@ -87,6 +87,12 @@
       };
     },
 
+    computed: {
+      checkFiltersEmpty() {
+        return (this.timeFilter === '') && (this.fileFilter === '') && (messageFilter === '');
+      },
+    },
+
     methods: {
       loadFiles() {
         invoke('GET', '/logs', [], (data) => {
@@ -102,7 +108,10 @@
 
       emptyFilter() {
         console.log('empty');
-        Vue.$set(this, 'itemscol', {});
+        this.itemscol = {}
+        this.timeFilter = '';
+        this.fileFilter = '';
+        this.messageFilter = '';
         this.searchFilter();
       },
 
@@ -136,3 +145,14 @@
     },
   };
 </script>
+<style lang="sass">
+  @import '~vuetify/src/styles/styles.sass'
+  @import '../styles/colors.scss'
+  @import '../styles/animations.scss'
+  @import '~animate.css'
+
+  .filterIcon
+    &:hover
+      color: $c-shadow !important
+      cursor: pointer
+</style>

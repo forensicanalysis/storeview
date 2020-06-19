@@ -105,9 +105,11 @@
       </v-list>
     </div>
     <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
-      <div style="overflow-x: scroll; transition: width 0.2s ease-in"
+      <div style="overflow-x: hidden; transition: width 0.2s ease-in"
            class="pt-3 flex-shrink-1 flex-grow-1"
       >
+        <p>{{this.filter}}</p>
+        <p>{{this.itemscol}}</p>
         <v-text-field
           v-model="search"
           prepend-inner-icon="mdi-magnify"
@@ -137,11 +139,11 @@
         >
           <template v-slot:body.prepend>
             <tr>
-              <td>
+              <td @click="emptyFilter">
                 <v-icon v-if="_.isEmpty(filter.columns)" color="primary" small class="ml-1">
                   mdi-filter-outline
                 </v-icon>
-                <v-icon v-else color="primary" small class="ml-1" @click="emptyFilter">
+                <v-icon v-else color="primary" small class="ml-1">
                   mdi-filter-remove-outline
                 </v-icon>
               </td>
@@ -374,7 +376,11 @@
 
       emptyFilter() {
         console.log('empty');
-        Vue.$set(this, 'itemscol', {});
+        this.itemscol = {}
+        this.filter = {
+          table: this.$store.state.type,
+          columns: {},
+        };
         this.searchFilter();
       },
 
@@ -452,7 +458,9 @@
           this.filter.columns[column] = [value];
         }
 
-        this.filter.columns.elements = [this.search];
+        if(this.search !== '') {
+          this.filter.columns.elements = [this.search];
+        }
         this.$store.commit('setFilter', this.filter);
         this.$store.dispatch('loadItems');
       },
