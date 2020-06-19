@@ -666,4 +666,7 @@
     width: 0 !important
     white-space: nowrap !important
 
+  .text-right
+    direction: rtl
+
 </style>
