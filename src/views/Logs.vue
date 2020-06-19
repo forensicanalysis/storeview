@@ -3,6 +3,7 @@
     <v-data-table
       :headers="headers"
       :items="logs"
+      :loading="loading"
       :fixed-header="true"
       :footer-props="{'items-per-page-options': [50, 100]}"
       :items-per-page="10"
@@ -47,6 +48,8 @@
   import {invoke} from "../store/invoke";
   import {DateTime} from "luxon";
 
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
   export default {
     name: 'logs',
     data() {
@@ -55,6 +58,7 @@
         timeFilter: '',
         fileFilter: '',
         messageFilter: '',
+        loading: true,
 
         headers: [
           {
@@ -89,15 +93,18 @@
 
     computed: {
       checkFiltersEmpty() {
-        return (this.timeFilter === '') && (this.fileFilter === '') && (messageFilter === '');
+        return (this.timeFilter === '') && (this.fileFilter === '') && (this.messageFilter === '');
       },
     },
 
     methods: {
-      loadFiles() {
+      async loadFiles() {
+        await pause(1500)
         invoke('GET', '/logs', [], (data) => {
           console.log(data);
           this.logs = data.elements;
+        }).then(() => {
+          this.loading = false;
         });
       },
 
