@@ -373,6 +373,41 @@ func labels() *cobraserver.Command {
 	}
 }
 
+func query() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "query",
+		Route:  "/query",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			f.String("query", "", "query")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
+
+			query, err := flags.GetString("query")
+			if err != nil {
+				return err
+			}
+
+			q, err := expandQuery("SELECT json FROM elements WHERE " + query)
+			if err != nil {
+				return err
+			}
+			elements, err := store.Query(q)
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
+		},
+	}
+}
+
 type Direction string
 
 const (

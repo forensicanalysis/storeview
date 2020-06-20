@@ -40,7 +40,7 @@ func main() {
 	rootCmd := cobraserver.Application(
 		"fstore", 800, 600, staticPath, false,
 		listTables(), selectItems(), loadFile(), listTree(), listTasks(),
-		files(), logs(), errorsCommand(), label(), labels(),
+		files(), logs(), errorsCommand(), label(), labels(), getTaskSchema(), query(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {

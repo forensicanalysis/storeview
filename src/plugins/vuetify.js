@@ -24,6 +24,29 @@ import Vuetify from 'vuetify/lib';
 
 import colors from 'vuetify/lib/util/colors';
 
+import {
+  VTooltip,
+  VIcon,
+  VListItem,
+  VAvatar,
+  VFlex,
+  VLayout,
+  VSelect,
+  VTextarea,
+  VCheckbox,
+  VTextField
+} from 'vuetify/lib'
+
+Vue.component('v-tooltip', VTooltip);
+Vue.component('v-icon', VIcon);
+Vue.component('v-list-item', VListItem);
+Vue.component('v-avatar', VAvatar);
+Vue.component('v-flex', VFlex);
+Vue.component('v-layout', VLayout);
+Vue.component('v-select', VSelect);
+Vue.component('v-text-field', VTextField);
+Vue.component('v-textarea', VTextarea);
+Vue.component('v-checkbox', VCheckbox);
 
 Vue.use(Vuetify);
 
