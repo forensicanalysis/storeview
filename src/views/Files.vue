@@ -5,7 +5,8 @@
         slot="item"
         slot-scope="{ item }"
         exact
-        @click="loadFiles( item.path )">
+        @click="loadFiles( item.path )"
+        class="breadcrumbsHover">
         {{ item.text }}
       </v-breadcrumbs-item>
     </v-breadcrumbs>
@@ -58,6 +59,7 @@
           {text: "Download", value: "actions", sortable: false},
         ],
         files: [],
+        data: null
       };
     },
 
@@ -100,6 +102,24 @@
           this.files = data.elements;
         });
       },
+
+      editItem(item) {
+          const that = this;
+          this.$http.get(`http://localhost:8081/api/file?path=${item.path}`)
+          .then((response) => {
+            const blob = new Blob([response.data])
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = item.name
+            link.click()
+            URL.revokeObjectURL(link.href)
+            console.log(response)
+            that.data = response.data;
+          }).catch(console.error);
+          console.log(item)
+          console.log(that.data)
+          return item
+      },
     },
 
     mounted() {
@@ -107,3 +127,15 @@
     },
   };
 </script>
+<style lang="sass">
+
+  @import '~vuetify/src/styles/styles.sass'
+  @import '../styles/colors.scss'
+  @import '../styles/animations.scss'
+  @import '~animate.css'
+
+  .breadcrumbsHover
+    &:hover
+      color: $c-pink !important
+      cursor: pointer
+</style>

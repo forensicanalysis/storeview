@@ -51,6 +51,8 @@ export default new Vuex.Store({
     item: {},
     listPane: 80,
 
+    initialLoad: true,
+
     tasks: {
       fetch: {},
       unpack: { requires: ['fetch'] },
@@ -147,15 +149,10 @@ export default new Vuex.Store({
 
   actions: {
 
-    created({ commit, dispatch, state }) {
-      invoke('GET', '/tables', [], (tables) => {
-        commit('setTables', tables);
-      });
+    async loadItems({ commit, state }) {
+      const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+      await pause(2000)
 
-      dispatch('loadItems');
-    },
-
-    loadItems({ commit, state }) {
       let url = `/items?type=${state.type}`;
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, (value, column) => {
@@ -193,8 +190,13 @@ export default new Vuex.Store({
       });
     },
 
-    loadDirectories({ commit, state }, payload) {
+    async loadDirectories({ commit, state }, payload) {
+
+      const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+      await pause(1500)
+
       return new Promise((resolve) => {
+
         const directories = [];
 
         let slash = '';
@@ -207,7 +209,7 @@ export default new Vuex.Store({
         } else if (state.type === 'windows-registry-key') {
           slash = '\\';
         } else {
-          console.log('TABLE DOES NOT EXIST!');
+          resolve(directories);
           return
         }
 

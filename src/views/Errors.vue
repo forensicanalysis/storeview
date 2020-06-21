@@ -2,6 +2,7 @@
   <v-data-table
     :headers="headers"
     :items="errors"
+    :loading="loading"
     :fixed-header="true"
     :footer-props="{'items-per-page-options': [50, 100]}"
     :items-per-page="25"
@@ -20,10 +21,13 @@
 <script>
   import {invoke} from "../store/invoke";
 
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
   export default {
     name: 'errors',
     data() {
       return {
+        loading: true,
         headers: [
           // {text: "ID", value: "id"},
           {text: "Title", value: "title"},
@@ -36,9 +40,14 @@
     },
 
     methods: {
-      loadFiles() {
+      async loadFiles() {
+
+        await pause(1500)
+
         invoke('GET', '/errors', [], (data) => {
           this.errors = data.elements;
+        }).then(() => {
+          this.loading = false;
         });
       },
 
