@@ -114,6 +114,32 @@
           </div>
         </v-list-item-group>
       </v-list>
+      <v-list class="mt-2" dense>
+        <v-list-item-group>
+          <v-subheader class="navigationHeader tr-2">
+            <transition name="fade-fast">
+              <a v-show="leftExtended" class="pl-4">LABELS</a>
+            </transition>
+            <v-spacer></v-spacer>
+            <v-subheader class="tr-2">
+              <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
+            </v-subheader>
+          </v-subheader>
+          <hr class="divider"/>
+          <div v-if="loadingLabels">
+            <v-spacer/>
+            <looping-rhombuses-spinner
+              style="margin: 0 auto; padding: 20px"
+              :animation-duration="2500"
+              :rhombus-size="10"
+              color="#EF5350"
+            />
+          </div>
+          <div v-else>
+            <p>{{this.labels}}</p>
+          </div>
+        </v-list-item-group>
+      </v-list>
     </div>
     <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
       <div style="overflow-x: hidden; transition: width 0.2s ease-in; min-height: 88vh;"
@@ -128,6 +154,12 @@
           />
         </div>
         <div v-else>
+          <v-btn @click="getLabels">LABELS</v-btn>
+          <p>{{this.labels}}</p>
+          <v-text-field v-model="label"></v-text-field>
+          <v-text-field v-model="itemID"></v-text-field>
+          <v-btn @click="setLabel(label, itemID)">SET</v-btn>
+          <v-btn @click="unsetLabel(label, itemID)">UNSET</v-btn>
           <v-text-field
             v-model="search"
             prepend-inner-icon="mdi-magnify"
@@ -264,6 +296,10 @@
         leftWidth: 250,
         loadingTree: false,
         loadingTable: false,
+        loadingLabels: false,
+
+        label: '',
+        itemID: '',
 
         filter: {
           table: this.$store.state.type,
@@ -280,6 +316,7 @@
         options: {},
 
         directories: [],
+        labels: [],
       };
     },
 
@@ -393,8 +430,10 @@
               this.itemscol[this.$store.state.headers[i].value] = '';
             }
 
-            this.getDirectories();
             this.loadingTable = false;
+
+            this.getDirectories();
+            this.getLabels();
             this.forceRefresh();
 
             this.filter = {
@@ -546,22 +585,57 @@
         }
       },
 
+      async getLabels() {
+        await pause(1500)
+        invoke('GET', '/labels', [], (data) => {
+          console.log(data);
+          this.labels = data.elements;
+        }).then(() => {
+          this.loadingLabels = false;
+        })
+      },
+
+      setLabel(label, id) {
+
+        let url ='/label?id=' + id + '&label=' + label;
+
+        console.log(url)
+
+        invoke('GET', url, [], (data) => {
+          console.log(data);
+        })
+      },
+
+      unsetLabel(label, id) {
+
+        let url ='/label?id=' + id + '&label=' + label + '&set=false';
+
+        console.log(url)
+
+        invoke('GET', url, [], (data) => {
+          console.log(data);
+        })
+      },
+
     },
 
     created() {
       this.loadingTree = true;
       this.loadingTable = true;
+      this.loadingLabels = true;
       invoke('GET', '/tables', [], (tables) => {
         this.$store.commit('setTables', tables);
       });
       this.$store.dispatch('loadItems').then(() => {
         this.loadingTree = false;
         this.loadingTable = false;
+        this.loadingLabels = false;
       })
     },
 
     mounted() {
       this.getDirectories();
+      this.getLabels();
     },
 
     destroyed() {
