@@ -22,12 +22,15 @@
 package main
 
 import (
+	"errors"
+	"github.com/spf13/cobra"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/spf13/pflag"
 
-	"github.com/forensicanalysis/forensicworkflows/cmd"
+	forensicworkflows "github.com/forensicanalysis/forensicworkflows/cmd"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
@@ -41,8 +44,7 @@ func listTasks() *cobraserver.Command {
 			// f.String("type", "file", "item type")
 		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
-
-			runCmd := cmd.Run()
+			runCmd := forensicworkflows.Run()
 			commands := runCmd.Commands()
 			var children []string
 			for _, command := range commands {
@@ -52,4 +54,76 @@ func listTasks() *cobraserver.Command {
 			return cobraserver.PrintAny(w, children)
 		},
 	}
+}
+
+func getTaskSchema() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "task",
+		Route:  "/task",
+		Method: http.MethodGet,
+		SetupFlags: func(f *pflag.FlagSet) {
+			f.String("name", "", "command name")
+		},
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			name, err := flags.GetString("name")
+			if err != nil {
+				return err
+			}
+
+			runCmd := forensicworkflows.Run()
+			commands := runCmd.Commands()
+			for _, command := range commands {
+				if command.Name() == name {
+					schema := flagsToSchema(command.Flags())
+					return cobraserver.PrintAny(w, schema)
+				}
+			}
+
+			return errors.New("command not found")
+		},
+	}
+}
+
+func flagsToSchema(flags *pflag.FlagSet) forensicworkflows.JSONSchema {
+	schema := forensicworkflows.JSONSchema{
+		Properties: map[string]forensicworkflows.Property{},
+		Required:   []string{},
+	}
+
+	flags.VisitAll(func(f *pflag.Flag) {
+		typeMapping := map[string]string{
+			"string": "string",
+			"int":    "integer",
+			"bool":   "boolean",
+			"float":  "number",
+		}
+
+		property := forensicworkflows.Property{
+			Type:        typeMapping[f.Value.Type()],
+			Description: f.Usage,
+		}
+
+		if f.DefValue != "" {
+			var defaultValue interface{}
+			var err error
+			switch f.Value.Type() {
+			case "string":
+				property.Default = f.DefValue
+			case "int":
+				defaultValue, err = strconv.ParseInt(f.DefValue, 10, 64)
+			case "bool":
+				defaultValue, err = strconv.ParseBool(f.DefValue)
+			case "float":
+				defaultValue, err = strconv.ParseFloat(f.DefValue, 64)
+			}
+			if err == nil {
+				property.Default = defaultValue
+			}
+		}
+		schema.Properties[f.Name] = property
+		if _, ok := f.Annotations[cobra.BashCompOneRequiredFlag]; ok {
+			schema.Required = append(schema.Required, f.Name)
+		}
+	})
+	return schema
 }
