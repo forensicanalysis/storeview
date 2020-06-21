@@ -46,17 +46,17 @@ Author(s): Jonas Plum, Kadir Aslan
     <v-content>
       <v-card class="mx-3 mb-3" style="margin-top: -48px; z-index: 10">
         <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12);">
-          <v-tab v-for="(menuitem, route) in menu" :key="menuitem.name"
-                 @click="$router.push(route)"
-                 :class="{ 'primary--text' : $router.currentRoute.name === route}" text>
+          <v-tab v-for="(menuitem, idx) in menu" :key="menuitem.name"
+                 @click="$router.push({ name: menuitem.route }).catch(err => {})"
+                 :class="{ 'primary--text' : $router.currentRoute.name === menuitem.route}" text>
             <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
             {{menuitem.name}}
           </v-tab>
           <v-spacer/>
-          <v-tab v-for="(menuitem, route) in rmenu" :key="menuitem.name"
-                         @click="$router.push(route)">
-              <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
-              {{ menuitem.name }}
+          <v-tab v-for="(menuitem, idx) in rmenu" :key="menuitem.name"
+                 @click="$router.push({ name: menuitem.route }).catch(err => {})">
+            <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
+            {{ menuitem.name }}
           </v-tab>
         </v-tabs>
         <router-view/>
@@ -74,15 +74,15 @@ Author(s): Jonas Plum, Kadir Aslan
     data() {
       return {
         drawer: {},
-        menu: {
-          items: {name: 'Elements', icon: 'periodic-table'},
-          files: {name: 'Files', icon: 'file-tree'},
-          tasks: {name: 'Tasks', icon: 'checkbox-marked-outline'},
-        },
-        rmenu: {
-          errors: {name: 'Errors', icon: 'alert'},
-          logs: {name: 'Logs', icon: 'script-text-outline'},
-        },
+        menu: [
+          {name: 'Elements', route: 'items', icon: 'periodic-table'},
+          {name: 'Files', route: 'files', icon: 'file-tree'},
+          {name: 'Tasks', route: 'tasks', icon: 'checkbox-marked-outline'},
+        ],
+        rmenu: [
+          {name: 'Errors', route: 'errors', icon: 'alert'},
+          {name: 'Logs', route: 'logs', icon: 'script-text-outline'},
+        ],
       };
     },
     computed: {
