@@ -171,6 +171,14 @@
           />
         </div>
         <div v-else>
+          <p>{{this.selectedItems}}</p>
+          <v-btn
+            small
+            icon
+            @click="labelsDialogMultiple = true"
+          >
+            <v-icon class="detailsIcon">mdi-label-outline</v-icon>
+          </v-btn>
           <v-text-field
             v-model="search"
             prepend-inner-icon="mdi-magnify"
@@ -184,6 +192,7 @@
             class="mx-3"
           />
           <v-data-table
+            v-model="selectedItems"
             :headers="$store.state.headers"
             :items="$store.state.items"
             :loading="loadingLabelsTable"
@@ -250,6 +259,92 @@
         class="flex-grow-0 flex-shrink-0 verticalbar"
         ref="drawerRight"
       >
+        <v-dialog
+          v-model="labelsDialogMultiple"
+          max-width="800px"
+          height="500px"
+        >
+          <v-card>
+            <v-card-title class="labelsDialogTitle">
+              LABELS
+            </v-card-title>
+            <hr class="divider" style="margin: 0 !important"/>
+            <v-combobox
+              v-model="labelsToAddMultiple"
+              :items="labels"
+              :search-input.sync="searchLabelsMultiple"
+              hide-selected
+              label="Enter new labels or select existing ones."
+              multiple
+              chips
+              outlined
+              style="margin: 20px"
+              dense
+              deletable-chips
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      No results matching "<strong>{{ search }}</strong>". Press <kbd>enter</kbd> to create a new one.
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-combobox>
+            <v-card-actions>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsDialogMultiple = false"
+              >
+                Close
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsConfirmationMultiple = !labelsConfirmationMultiple"
+              >
+                Confirm
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="labelsConfirmationMultiple"
+          max-width="500px"
+        >
+          <v-card>
+            <v-card-title class="labelsDialogTitle">
+              <span>Are You Sure?</span>
+              <v-spacer></v-spacer>
+            </v-card-title>
+            <hr class="divider" style="margin: 0 !important"/>
+            <div style="padding: 12px">
+              <p style="margin: 4px">Following labels will be added to {{this.selectedItems.length}} items.:</p>
+              <v-chip style="margin: 4px" v-for="c in labelsToAddMultiple">{{c}}</v-chip>
+            </div>
+            <hr class="divider" style="margin: 0 !important"/>
+            <v-card-actions>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsConfirmationMultiple = false"
+              >
+                No
+              </v-btn>
+              <v-spacer/>
+              <v-btn
+                color="primary"
+                text
+                @click="setLabelsMultipleChunk(selectedItems, labelsToAddMultiple)"
+              >
+                Yes
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
         <v-dialog
           v-model="labelsDialog"
           max-width="800px"
@@ -398,14 +493,23 @@
         itemscol: {},
         rightWidth: 0,
         leftWidth: 250,
+
         loadingTree: false,
         loadingTable: false,
         loadingLabels: false,
         loadingLabelsTable: false,
+
         labelsDialog: false,
         labelsConfirmation: false,
         labelsToAdd: [],
         searchLabels: '',
+
+        labelsDialogMultiple: false,
+        labelsConfirmationMultiple: false,
+        labelsToAddMultiple: [],
+        searchLabelsMultiple: '',
+
+        selectedItems: [],
 
         label: '',
         itemID: '',
@@ -737,6 +841,13 @@
           this.setLabel(labels[i], id)
         }
         this.labelsConfirmation = false;
+      },
+
+      setLabelsMultipleChunk(items, labels) {
+        for (let i = 0; i < items.length; i += 1) {
+          this.setLabelsMultiple(items[i].id, labels)
+        }
+        this.labelsConfirmationMultiple = false;
       },
 
       filterLabels(label) {
