@@ -135,8 +135,25 @@
               color="#EF5350"
             />
           </div>
-          <div v-else>
-            <p>{{this.labels}}</p>
+          <div v-else style="margin-top: 10px; margin-left: 10px">
+            <v-chip
+              class="ma-2 lighten-3 navigationChip"
+              color="grey"
+              text-color="#424242"
+              v-for="label in labels"
+              small
+              style="margin: 2px !important"
+              @click="filterLabels(label)"
+            >
+              <v-avatar
+                left
+                class="grey lighten-2"
+                style="margin-left: -12px !important; color: #EF5350"
+              >
+                {{countOccurrences(labels, label)}}
+              </v-avatar>
+              {{label}}
+            </v-chip>
           </div>
         </v-list-item-group>
       </v-list>
@@ -154,12 +171,6 @@
           />
         </div>
         <div v-else>
-          <v-btn @click="getLabels">LABELS</v-btn>
-          <p>{{this.labels}}</p>
-          <v-text-field v-model="label"></v-text-field>
-          <v-text-field v-model="itemID"></v-text-field>
-          <v-btn @click="setLabel(label, itemID)">SET</v-btn>
-          <v-btn @click="unsetLabel(label, itemID)">UNSET</v-btn>
           <v-text-field
             v-model="search"
             prepend-inner-icon="mdi-magnify"
@@ -175,7 +186,7 @@
           <v-data-table
             :headers="$store.state.headers"
             :items="$store.state.items"
-            :loading="loadingTable"
+            :loading="loadingLabelsTable"
             :options.sync="options"
             :server-items-length="$store.state.itemCount"
             @update:options="updateopt"
@@ -239,6 +250,92 @@
         class="flex-grow-0 flex-shrink-0 verticalbar"
         ref="drawerRight"
       >
+        <v-dialog
+          v-model="labelsDialog"
+          max-width="800px"
+          height="500px"
+        >
+          <v-card>
+            <v-card-title class="labelsDialogTitle">
+              LABELS
+            </v-card-title>
+            <hr class="divider" style="margin: 0 !important"/>
+            <v-combobox
+              v-model="labelsToAdd"
+              :items="labels"
+              :search-input.sync="searchLabels"
+              hide-selected
+              label="Enter new labels or select existing ones."
+              multiple
+              chips
+              outlined
+              style="margin: 20px"
+              dense
+              deletable-chips
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      No results matching "<strong>{{ search }}</strong>". Press <kbd>enter</kbd> to create a new one.
+                    </v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+              </template>
+            </v-combobox>
+            <v-card-actions>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsDialog = false"
+              >
+                Close
+              </v-btn>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsConfirmation = !labelsConfirmation"
+              >
+                Confirm
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+        <v-dialog
+          v-model="labelsConfirmation"
+          max-width="500px"
+        >
+          <v-card>
+            <v-card-title class="labelsDialogTitle">
+              <span>Are You Sure?</span>
+              <v-spacer></v-spacer>
+            </v-card-title>
+            <hr class="divider" style="margin: 0 !important"/>
+            <div style="padding: 12px">
+              <p style="margin: 4px">Following labels will be added:</p>
+              <v-chip style="margin: 4px" v-for="c in labelsToAdd">{{c}}</v-chip>
+            </div>
+            <hr class="divider" style="margin: 0 !important"/>
+            <v-card-actions>
+              <v-btn
+                color="primary"
+                text
+                @click="labelsConfirmation = false"
+              >
+                No
+              </v-btn>
+              <v-spacer/>
+              <v-btn
+                color="primary"
+                text
+                @click="setLabelsMultiple($store.state.item.id, labelsToAdd)"
+              >
+                Yes
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
         <v-toolbar
           v-if="!_.isEmpty($store.state.item)"
           class="elevation-0 ml-2 mr-0"
@@ -246,6 +343,13 @@
           <v-toolbar-title>{{ $store.state.item.id }}</v-toolbar-title>
           <v-spacer/>
           <v-toolbar-items>
+            <v-btn
+              small
+              icon
+              @click="labelsDialog = true"
+            >
+              <v-icon class="detailsIcon">mdi-label-outline</v-icon>
+            </v-btn>
             <v-btn
               small
               icon
@@ -297,6 +401,11 @@
         loadingTree: false,
         loadingTable: false,
         loadingLabels: false,
+        loadingLabelsTable: false,
+        labelsDialog: false,
+        labelsConfirmation: false,
+        labelsToAdd: [],
+        searchLabels: '',
 
         label: '',
         itemID: '',
@@ -585,11 +694,18 @@
         }
       },
 
+      countOccurrences(arr, val) {
+        return arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
+      },
+
       async getLabels() {
         await pause(1500)
+        const that = this;
+        this.labels = [];
         invoke('GET', '/labels', [], (data) => {
-          console.log(data);
-          this.labels = data.elements;
+          for (let i = 0; i < data.length; i += 1) {
+            that.labels.push(data[i]);
+          }
         }).then(() => {
           this.loadingLabels = false;
         })
@@ -598,12 +714,11 @@
       setLabel(label, id) {
 
         let url ='/label?id=' + id + '&label=' + label;
-
         console.log(url)
-
         invoke('GET', url, [], (data) => {
           console.log(data);
         })
+
       },
 
       unsetLabel(label, id) {
@@ -616,6 +731,22 @@
           console.log(data);
         })
       },
+
+      setLabelsMultiple(id, labels) {
+        for (let i = 0; i < labels.length; i += 1) {
+          this.setLabel(labels[i], id)
+        }
+        this.labelsConfirmation = false;
+      },
+
+      filterLabels(label) {
+        console.log(label);
+        this.loadingLabelsTable = true;
+        this.$store.commit('setLabelFilter', label);
+        this.$store.dispatch('loadItems').then(() => {
+          this.loadingLabelsTable = false;
+        });
+      }
 
     },
 
@@ -745,6 +876,16 @@
   .navigationMenuIcon
     color: $c-pink !important
     transition: $transition-fast !important
+
+  .navigationChip
+    &:hover
+      cursor: pointer
+
+  .labelsDialogTitle
+    font-family: 'Roboto Condensed', sans-serif
+    letter-spacing: 0.05rem !important
+    font-size: 1.5rem !important
+    padding: 16px !important
 
   .fade-fast-enter,
   .fade-fast-leave-to

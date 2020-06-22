@@ -48,6 +48,8 @@ export default new Vuex.Store({
     offset: 0,
     templates,
 
+    label: '',
+
     item: {},
     listPane: 80,
 
@@ -145,6 +147,10 @@ export default new Vuex.Store({
       state.filter = data;
     },
 
+    setLabelFilter(state, data) {
+      state.label = data;
+    }
+
   },
 
   actions: {
@@ -176,6 +182,9 @@ export default new Vuex.Store({
             url += `&sort[${column}]=${direction}`;
           }
         });
+      }
+      if (state.label !== '') {
+        url += `&labels=${state.label}`;
       }
 
       url += `&offset=${state.offset}`;
@@ -257,6 +266,12 @@ export default new Vuex.Store({
       commit('setOffset', data);
       dispatch('loadItems');
     },
+
+    updateLabel({ commit, dispatch }, data) {
+      commit('setLabelFilter', data);
+      dispatch('loadItems');
+    },
+
   },
 
   modules: {},
