@@ -22,9 +22,11 @@
 package main
 
 import (
-	"errors"
+	"encoding/json"
+	"fmt"
 	"github.com/spf13/cobra"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -46,9 +48,11 @@ func listTasks() *cobraserver.Command {
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			runCmd := forensicworkflows.Run()
 			commands := runCmd.Commands()
-			var children []string
+			children := map[string]forensicworkflows.JSONSchema{}
 			for _, command := range commands {
-				children = append(children, command.Name())
+				schema := flagsToSchema(command.Flags())
+				children[command.Name()] = schema
+				// children = append(children, command.Name())
 			}
 
 			return cobraserver.PrintAny(w, children)
@@ -56,30 +60,61 @@ func listTasks() *cobraserver.Command {
 	}
 }
 
-func getTaskSchema() *cobraserver.Command {
+func runTask() *cobraserver.Command {
 	return &cobraserver.Command{
-		Name:   "task",
-		Route:  "/task",
-		Method: http.MethodGet,
+		Name:   "run",
+		Route:  "/run",
+		Method: http.MethodPost,
 		SetupFlags: func(f *pflag.FlagSet) {
 			f.String("name", "", "command name")
 		},
-		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+		Handler: func(w io.Writer, r io.Reader, flags *pflag.FlagSet) error {
 			name, err := flags.GetString("name")
 			if err != nil {
 				return err
 			}
 
+			var plugin *cobra.Command
 			runCmd := forensicworkflows.Run()
 			commands := runCmd.Commands()
 			for _, command := range commands {
 				if command.Name() == name {
-					schema := flagsToSchema(command.Flags())
-					return cobraserver.PrintAny(w, schema)
+					plugin = command
 				}
 			}
 
-			return errors.New("command not found")
+			if plugin == nil || plugin.RunE == nil {
+				return fmt.Errorf("plugin %s cannot be run", name)
+			}
+
+			var arguments map[string]interface{}
+			b, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			err = json.Unmarshal(b, &arguments)
+			if err != nil {
+				return err
+			}
+
+			plugin.SetOut(w)
+			plugin.Flags().AddFlagSet(flags)
+			for name, arg := range arguments {
+				fmt.Println(name, arg)
+				err = plugin.Flags().Set(name, fmt.Sprint(arg))
+				if err != nil {
+					return err
+				}
+			}
+			err = plugin.Flags().Set("format", "json")
+			if err != nil {
+				return err
+			}
+			err = plugin.Flags().Set("add-to-store", "true")
+			if err != nil {
+				return err
+			}
+			return plugin.RunE(plugin, flags.Args())
 		},
 	}
 }
