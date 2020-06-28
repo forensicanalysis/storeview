@@ -24,6 +24,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/patrickmn/go-cache"
 	"io"
 	"net/http"
 	"strings"
@@ -75,12 +76,12 @@ func listTree() *cobraserver.Command {
 				"AND %s LIKE '%s%%' "+
 				"GROUP BY dir",
 				col, directory, col, directory, separator, elementType, col, directory)
-
 			fmt.Println(query)
 
 			var children []string
 
-			conn := store.Connection()
+			conn, connTeardown := store.Connection()
+			defer connTeardown()
 
 			stmt, err := conn.Prepare(query)
 			if err != nil {
@@ -228,14 +229,16 @@ func listTables() *cobraserver.Command {
 			}
 			defer teardown()
 
-			conn := store.Connection()
-			stmt := conn.Prep(
-				"SELECT " +
-					"json_extract(json, '$.type') as type, " +
-					"count(json) as count " +
-					"FROM elements " +
-					"GROUP BY json_extract(json, '$.type')",
-			)
+			conn, connTeardown := store.Connection()
+			defer connTeardown()
+
+			q := "SELECT " +
+				"json_extract(json, '$.type') as type, " +
+				"count(json) as count " +
+				"FROM elements " +
+				"GROUP BY json_extract(json, '$.type')"
+			fmt.Println(q)
+			stmt := conn.Prep(q)
 			var filtered []forensicstore.Element
 			for {
 				if hasRow, err := stmt.Step(); err != nil {
@@ -291,7 +294,9 @@ func label() *cobraserver.Command {
 				return err
 			}
 
-			conn := store.Connection()
+			conn, connTeardown := store.Connection()
+			defer connTeardown()
+
 			stmt, err := conn.Prepare(fmt.Sprintf(
 				"UPDATE elements "+
 					"SET json = json_patch(json,'{\"label\": {\"%s\": %s}}') "+
@@ -331,12 +336,15 @@ func labels() *cobraserver.Command {
 			}
 			defer teardown()
 
-			conn := store.Connection()
-			stmt, err := conn.Prepare(
-				"SELECT json_extract(json, '$.label') AS labels " +
-					"FROM elements " +
-					"WHERE json_extract(json, '$.label') != ''",
-			)
+			conn, connTeardown := store.Connection()
+			defer connTeardown()
+
+			q := "SELECT json_extract(json, '$.label') AS labels " +
+				"FROM elements " +
+				"WHERE json_extract(json, '$.label') != ''"
+			fmt.Println(q)
+
+			stmt, err := conn.Prepare(q)
 			if err != nil {
 				return err
 			}
@@ -398,7 +406,7 @@ func query() *cobraserver.Command {
 			if err != nil {
 				return err
 			}
-			elements, err := store.Query(q)
+			elements, err := storequery(store, q)
 			if err != nil {
 				return err
 			}
@@ -477,29 +485,39 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 		}
 	}
 
-	c := "SELECT count(json) as count FROM elements" + q
-	conn := store.Connection()
-	stmt, err := conn.Prepare(c)
-	if err != nil {
-		return 0, nil, err
-	}
+	countQuery := "SELECT count(json) as count FROM elements" + q
 
-	_, err = stmt.Step()
-	if err != nil {
-		return 0, nil, err
-	}
+	var count int64
+	countCached, found := queryCache.Get(countQuery)
+	if found {
+		count = countCached.(int64)
+	} else {
+		conn, teardown := store.Connection()
+		defer teardown()
 
-	count := stmt.GetInt64("count")
+		fmt.Println(countQuery)
+		stmt, err := conn.Prepare(countQuery)
+		if err != nil {
+			return 0, nil, err
+		}
 
-	err = stmt.Finalize()
-	if err != nil {
-		return 0, nil, err
+		_, err = stmt.Step()
+		if err != nil {
+			return 0, nil, err
+		}
+
+		count = stmt.GetInt64("count")
+		queryCache.Set(countQuery, count, cache.DefaultExpiration)
+
+		err = stmt.Finalize()
+		if err != nil {
+			return 0, nil, err
+		}
 	}
 
 	q += fmt.Sprintf(" LIMIT %d", options.Limit)
 	q += fmt.Sprintf(" OFFSET %d", options.Offset)
 	q += ";"
-	fmt.Println("SELECT json FROM elements" + q)
-	elements, err := store.Query("SELECT json FROM elements" + q)
+	elements, err := storequery(store, "SELECT json FROM elements"+q)
 	return count, elements, err
 }
