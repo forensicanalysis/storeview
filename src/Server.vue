@@ -22,43 +22,51 @@ Author(s): Jonas Plum, Kadir Aslan
 -->
 
 <template>
-  <v-app :style="{background: $vuetify.theme.themes['light'].background}">
-    <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex: 0">
-      <v-tab v-for="(menuitem, idx) in menu" :key="menuitem.name"
-             @click="$router.push({ name: menuitem.route }).catch(err => {})"
-             :class="{ 'primary--text' : $router.currentRoute.name === menuitem.route}" text>
-        <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
-        {{menuitem.name}}
-      </v-tab>
+  <v-app :style="{background: $vuetify.theme.themes[theme].background}">
+    <v-app-bar color="sidebar"
+               app
+               flat
+               dark
+               dense
+               extended>
+      <v-toolbar-title class="mr-8 ml-4">Elementary</v-toolbar-title>
       <v-spacer/>
-      <v-tab v-for="(menuitem, idx) in rmenu" :key="menuitem.name"
-             @click="$router.push({ name: menuitem.route }).catch(err => {})">
-        <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
-        {{ menuitem.name }}
-      </v-tab>
-    </v-tabs>
-    <router-view/>
+      <v-toolbar-title class="mr-8 ml-4 body-1">
+        md1rejuc_2020-05-11T14-05-57.forensicstore
+      </v-toolbar-title>
+      <v-spacer/>
+      <v-toolbar-items>
+        <v-btn class="primary--text" text>Cases</v-btn>
+        <v-btn text>Upload</v-btn>
+      </v-toolbar-items>
+      <v-btn class="mr-3" icon @click.stop="$vuetify.theme.dark = !$vuetify.theme.dark">
+        <v-icon>mdi-invert-colors</v-icon>
+      </v-btn>
+    </v-app-bar>
+    <v-content>
+      <v-card class="mx-3 mb-3" style="margin-top: -48px; z-index: 10">
+        <app/>
+      </v-card>
+    </v-content>
   </v-app>
 </template>
 
 <script>
+  import Vuetify from './plugins/vuetify.js';
+
   export default {
     name: 'app',
+    components: {},
     data() {
       return {
-        menu: [
-          {name: 'Elements', route: 'items', icon: 'periodic-table'},
-          {name: 'Files', route: 'files', icon: 'file-tree'},
-          {name: 'Tasks', route: 'tasks', icon: 'checkbox-marked-outline'},
-        ],
-        rmenu: [
-          {name: 'Errors', route: 'errors', icon: 'alert'},
-          {name: 'Logs', route: 'logs', icon: 'script-text-outline'},
-        ],
       };
     },
+    computed: {
+      theme() {
+        return (Vuetify.framework.theme.dark) ? 'dark' : 'light';
+      },
+    },
     created() {
-      this.$store.dispatch('created');
     },
   };
 </script>
@@ -67,7 +75,7 @@ Author(s): Jonas Plum, Kadir Aslan
 
   body {
     font-family: 'Roboto', sans-serif;
-    background-color: #fff; /*#B0BEC5;*/
+    background-color: #B0BEC5;
   }
 
   h1, h2, h3, .v-toolbar__title, .title {
