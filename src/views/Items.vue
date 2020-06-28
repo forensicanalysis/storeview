@@ -2,10 +2,184 @@
   <div class="d-flex flex-row" style="width: 100%">
     <div
       ref="drawerLeft"
-      class="flex-grow-0 flex-shrink-0 verticalbar"
+      class="flex-grow-0 flex-shrink-0 verticalbar scrollableArea"
       :style="'width: ' + leftWidth + 'px'"
-      style="border-right: 1px solid rgba(0, 0, 0, 0.12)"
+      style="border-right: 1px solid rgba(0, 0, 0, 0.12); overflow-x: hidden !important;"
     >
+      <v-expansion-panels accordion multiple>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            <v-subheader class="navigationHeader tr-2">
+              <transition name="fade-fast">
+                <a v-show="leftExtended" class="pl-4">TYPE</a>
+              </transition>
+              <v-spacer></v-spacer>
+              <v-subheader class="tr-2">
+                <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type
+                </v-icon>
+              </v-subheader>
+            </v-subheader>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-list style="padding: 0 !important" dense>
+              <hr class="divider"/>
+              <v-list-item-group v-model="itemTypeIndex" color="primary">
+                <v-list-item @click="loadList('')">
+                  <v-list-item-icon>
+                    <v-icon>mdi-file-multiple</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title>All</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item
+                  v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
+                  :key="i"
+                  @click="loadList(table['name'])"
+                  class="px-4"
+                >
+                  <v-list-item-icon>
+                    <v-icon
+                      v-if="_.has($store.state.templates[table['name']], 'icon')"
+                      v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+                    <v-icon v-else>mdi-file-outline</v-icon>
+                  </v-list-item-icon>
+                  <v-list-item-content>
+                    <v-list-item-title v-text="_.startCase(table.name)"/>
+                  </v-list-item-content>
+                  <v-list-item-icon v-show="leftExtended">
+                    <span v-if="'count' in table">{{table['count']}}</span>
+                  </v-list-item-icon>
+                </v-list-item>
+              </v-list-item-group>
+            </v-list>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel v-show="showLocation">
+          <v-expansion-panel-header>
+            <v-subheader class="navigationHeader tr-2">
+              <transition name="fade-fast">
+                <a v-show="leftExtended" class="pl-4">LOCATION</a>
+              </transition>
+              <v-spacer></v-spacer>
+              <v-subheader class="tr-2">
+                <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
+              </v-subheader>
+            </v-subheader>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-list style="padding: 0 !important" dense>
+              <v-list-item-group>
+                <hr class="divider"/>
+                <div v-if="loadingTree">
+                  <v-spacer/>
+                  <looping-rhombuses-spinner
+                    style="margin: 0 auto; padding: 20px"
+                    :animation-duration="2500"
+                    :rhombus-size="10"
+                    color="#EF5350"
+                  />
+                </div>
+                <div v-else>
+                  <transition name="fade-slow" mode="out-in">
+                    <div v-if="!leftExtended" key="dots">
+                      <v-icon class="tr-2"
+                              style="margin-left: 16px">
+                        mdi-dots-horizontal
+                      </v-icon>
+                    </div>
+                    <div v-else key="tree">
+                      <v-treeview
+                        class="tr-2"
+                        v-show="refresh && directories.length > 0 && leftExtended"
+                        activatable
+                        hoverable
+                        dense
+                        transition
+                        @update:active="updatedir"
+                        :active.sync="active"
+                        :items="directories"
+                        :load-children="fetchTreeChildren"
+                        :open.sync="open"
+                        item-key="path"
+                        color="primary"
+                        ref="treeView"
+                      >
+                        <template v-slot:prepend="{ item, open }">
+                          <v-icon v-if="item.children">
+                            {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                          </v-icon>
+                          <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
+                        </template>
+                      </v-treeview>
+                    </div>
+                  </transition>
+                </div>
+              </v-list-item-group>
+            </v-list>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            <v-subheader class="navigationHeader tr-2">
+              <transition name="fade-fast">
+                <a v-show="leftExtended" class="pl-4">LABELS</a>
+              </transition>
+              <v-spacer></v-spacer>
+              <v-subheader class="tr-2">
+                <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-label-outline</v-icon>
+              </v-subheader>
+            </v-subheader>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <v-list style="padding: 0 !important" dense>
+              <v-list-item-group>
+                <hr class="divider"/>
+                <div v-if="loadingLabels">
+                  <v-spacer/>
+                  <looping-rhombuses-spinner
+                    style="margin: 0 auto; padding: 20px"
+                    :animation-duration="2500"
+                    :rhombus-size="10"
+                    color="#EF5350"
+                  />
+                </div>
+                <div v-else style="margin-top: 10px; margin-left: 10px">
+                  <transition name="fade-slow" mode="out-in">
+                    <div v-if="!leftExtended" key="dots">
+                      <v-icon class="tr-2"
+                              style="margin-left: 6px">
+                        mdi-dots-horizontal
+                      </v-icon>
+                    </div>
+                    <div v-else key="labels">
+                      <v-chip
+                        class="ma-2 lighten-3 navigationChip"
+                        color="grey"
+                        text-color="#424242"
+                        v-for="label in labels"
+                        small
+                        style="margin: 2px !important"
+                        @click="filterLabels(label)"
+                      >
+                        <v-avatar
+                          left
+                          class="grey lighten-2"
+                          style="margin-left: -12px !important; color: #EF5350"
+                        >
+                          {{countOccurrences(labels, label)}}
+                        </v-avatar>
+                        {{label}}
+                      </v-chip>
+                    </div>
+                  </transition>
+                </div>
+              </v-list-item-group>
+            </v-list>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
+      <v-divider/>
       <div class="d-flex justify-end">
         <v-btn small icon @click="toogleLeft">
           <v-icon class="navigationDrawerIcon"
@@ -13,154 +187,10 @@
           </v-icon>
         </v-btn>
       </div>
-
-      <v-list dense>
-        <v-subheader class="navigationHeader tr-2">
-          <transition name="fade-fast">
-            <a v-show="leftExtended" class="pl-4">TYPE</a>
-          </transition>
-          <v-spacer></v-spacer>
-          <v-subheader class="tr-2">
-            <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-format-list-bulleted-type
-            </v-icon>
-          </v-subheader>
-        </v-subheader>
-        <hr class="divider"/>
-        <v-list-item-group v-model="itemTypeIndex" color="primary">
-          <v-list-item @click="loadList('')">
-            <v-list-item-icon>
-              <v-icon>mdi-file-multiple</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>All</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
-            :key="i"
-            @click="loadList(table['name'])"
-            class="px-4"
-          >
-            <v-list-item-icon>
-              <v-icon
-                v-if="_.has($store.state.templates[table['name']], 'icon')"
-                v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
-              <v-icon v-else>mdi-file-outline</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title v-text="_.startCase(table.name)"/>
-            </v-list-item-content>
-            <v-list-item-icon v-show="leftExtended">
-              <span v-if="'count' in table">{{table['count']}}</span>
-            </v-list-item-icon>
-          </v-list-item>
-        </v-list-item-group>
-      </v-list>
-      <v-list class="mt-2" dense>
-        <v-list-item-group>
-          <v-subheader class="navigationHeader tr-2">
-            <transition name="fade-fast">
-              <a v-show="leftExtended" class="pl-4">LOCATION</a>
-            </transition>
-            <v-spacer></v-spacer>
-            <v-subheader class="tr-2">
-              <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
-            </v-subheader>
-          </v-subheader>
-          <hr class="divider"/>
-          <div v-if="loadingTree">
-            <v-spacer/>
-            <looping-rhombuses-spinner
-              style="margin: 0 auto; padding: 20px"
-              :animation-duration="2500"
-              :rhombus-size="10"
-              color="#EF5350"
-            />
-          </div>
-          <div v-else>
-            <transition name="fade-slow" mode="out-in">
-              <div v-if="!leftExtended" key="dots">
-                <v-icon class="tr-2"
-                        style="margin-left: 16px">
-                  mdi-dots-horizontal
-                </v-icon>
-              </div>
-              <div v-else key="tree">
-                <v-treeview
-                  class="tr-2"
-                  v-show="refresh && directories.length > 0 && leftExtended"
-                  activatable
-                  hoverable
-                  dense
-                  transition
-                  @update:active="updatedir"
-                  :active.sync="active"
-                  :items="directories"
-                  :load-children="fetchTreeChildren"
-                  :open.sync="open"
-                  item-key="path"
-                  color="primary"
-                  ref="treeView"
-                >
-                  <template v-slot:prepend="{ item, open }">
-                    <v-icon v-if="item.children">
-                      {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
-                    </v-icon>
-                    <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-                  </template>
-                </v-treeview>
-              </div>
-            </transition>
-          </div>
-        </v-list-item-group>
-      </v-list>
-      <v-list class="mt-2" dense>
-        <v-list-item-group>
-          <v-subheader class="navigationHeader tr-2">
-            <transition name="fade-fast">
-              <a v-show="leftExtended" class="pl-4">LABELS</a>
-            </transition>
-            <v-spacer></v-spacer>
-            <v-subheader class="tr-2">
-              <v-icon :class="{'navigationMenuIcon': !leftExtended}">mdi-file-tree</v-icon>
-            </v-subheader>
-          </v-subheader>
-          <hr class="divider"/>
-          <div v-if="loadingLabels">
-            <v-spacer/>
-            <looping-rhombuses-spinner
-              style="margin: 0 auto; padding: 20px"
-              :animation-duration="2500"
-              :rhombus-size="10"
-              color="#EF5350"
-            />
-          </div>
-          <div v-else style="margin-top: 10px; margin-left: 10px">
-            <v-chip
-              class="ma-2 lighten-3 navigationChip"
-              color="grey"
-              text-color="#424242"
-              v-for="label in labels"
-              small
-              style="margin: 2px !important"
-              @click="filterLabels(label)"
-            >
-              <v-avatar
-                left
-                class="grey lighten-2"
-                style="margin-left: -12px !important; color: #EF5350"
-              >
-                {{countOccurrences(labels, label)}}
-              </v-avatar>
-              {{label}}
-            </v-chip>
-          </div>
-        </v-list-item-group>
-      </v-list>
     </div>
     <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
       <div style="overflow-x: hidden; transition: width 0.2s ease-in; min-height: 88vh;"
-           class="pt-3 flex-shrink-1 flex-grow-1"
+           class="pt-3 flex-shrink-1 flex-grow-1 scrollableArea"
       >
         <div v-if="loadingTable">
           <looping-rhombuses-spinner
@@ -171,14 +201,24 @@
           />
         </div>
         <div v-else>
-          <p>{{this.selectedItems}}</p>
-          <v-btn
-            small
-            icon
-            @click="labelsDialogMultiple = true"
-          >
-            <v-icon class="detailsIcon">mdi-label-outline</v-icon>
-          </v-btn>
+          <v-bottom-sheet v-model="bottomSheet"
+                          inset
+                          hide-overlay
+                          no-click-animation
+                          persistent>
+            <v-sheet class="text-center bottomSheetStyle"
+                     height="auto"
+                     style="background: #EF5350">
+              <v-btn
+                small
+                icon
+                @click="labelsDialogMultiple = true"
+              >
+                <v-icon class="bottomSheetIcon">mdi-label-outline</v-icon>
+              </v-btn>
+            </v-sheet>
+          </v-bottom-sheet>
+
           <v-text-field
             v-model="search"
             prepend-inner-icon="mdi-magnify"
@@ -195,7 +235,7 @@
             v-model="selectedItems"
             :headers="$store.state.headers"
             :items="$store.state.items"
-            :loading="loadingLabelsTable"
+            :loading="loadingFilteredTable"
             :options.sync="options"
             :server-items-length="$store.state.itemCount"
             @update:options="updateopt"
@@ -256,13 +296,14 @@
       <div
         :style="'width: ' + rightWidth + '%'"
         style="border-left: 1px solid rgba(0, 0, 0, 0.12)"
-        class="flex-grow-0 flex-shrink-0 verticalbar"
+        class="flex-grow-0 flex-shrink-0 verticalbar scrollableArea"
         ref="drawerRight"
       >
         <v-dialog
           v-model="labelsDialogMultiple"
           max-width="800px"
           height="500px"
+          style="overflow: hidden"
         >
           <v-card>
             <v-card-title class="labelsDialogTitle">
@@ -286,7 +327,8 @@
                 <v-list-item>
                   <v-list-item-content>
                     <v-list-item-title>
-                      No results matching "<strong>{{ search }}</strong>". Press <kbd>enter</kbd> to create a new one.
+                      No results matching. Press <kbd>enter</kbd> to
+                      create a new one.
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
@@ -296,7 +338,7 @@
               <v-btn
                 color="primary"
                 text
-                @click="labelsDialogMultiple = false"
+                @click="discardAddLabels(true)"
               >
                 Close
               </v-btn>
@@ -322,7 +364,9 @@
             </v-card-title>
             <hr class="divider" style="margin: 0 !important"/>
             <div style="padding: 12px">
-              <p style="margin: 4px">Following labels will be added to {{this.selectedItems.length}} items.:</p>
+              <p style="margin: 4px" class="noLabelsText">Following labels will be added to
+                {{this.selectedItems.length}}
+                items:</p>
               <v-chip style="margin: 4px" v-for="c in labelsToAddMultiple">{{c}}</v-chip>
             </div>
             <hr class="divider" style="margin: 0 !important"/>
@@ -343,6 +387,12 @@
                 Yes
               </v-btn>
             </v-card-actions>
+            <v-progress-linear
+              v-if="loadingLabelsOperation"
+              color="#EF5350"
+              buffer-value="0"
+              stream
+            ></v-progress-linear>
           </v-card>
         </v-dialog>
         <v-dialog
@@ -355,9 +405,57 @@
               LABELS
             </v-card-title>
             <hr class="divider" style="margin: 0 !important"/>
+
+            <div
+              style="padding: 2px 14px !important; max-height: 40px !important; min-height: 40px !important; background: whitesmoke">
+              <v-chip-group
+                v-model="labelsToRemove"
+                multiple
+                show-arrows
+              >
+                <v-chip class="lighten-3"
+                        color="grey"
+                        text-color="#EF5350"
+                        small
+                        filter
+                        filter-icon="mdi-close"
+                        style="margin: 2px !important"
+                        v-for="label in existingLabels" :key="label">
+<!--                  <v-avatar-->
+<!--                    left-->
+<!--                    class="grey lighten-2"-->
+<!--                    style="margin-left: -33px !important; color: #424242"-->
+<!--                  >-->
+<!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
+<!--                  </v-avatar>-->
+                  {{ label }}
+                </v-chip>
+                <p class="noLabelsText"
+                   v-if="existingLabels.length === 0 && labelsToAdd.length === 0">No labels
+                  exist.</p>
+                <v-chip class="lighten-4"
+                        color="green"
+                        text-color="#EF5350"
+                        small
+                        filter
+                        filter-icon="mdi-close"
+                        style="margin: 2px !important"
+                        v-for="label in labelsToAdd" :key="label">
+<!--                  <v-avatar-->
+<!--                    left-->
+<!--                    class="grey lighten-2"-->
+<!--                    style="margin-left: -33px !important; color: #424242"-->
+<!--                  >-->
+<!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
+<!--                  </v-avatar>-->
+                  {{ label }}
+                </v-chip>
+              </v-chip-group>
+            </div>
+            <hr class="divider" style="margin: 0 !important"/>
             <v-combobox
               v-model="labelsToAdd"
-              :items="labels"
+              :items="removeExistingLabels(existingLabels)"
               :search-input.sync="searchLabels"
               hide-selected
               label="Enter new labels or select existing ones."
@@ -372,7 +470,8 @@
                 <v-list-item>
                   <v-list-item-content>
                     <v-list-item-title>
-                      No results matching "<strong>{{ search }}</strong>". Press <kbd>enter</kbd> to create a new one.
+                      No results matching. Press <kbd>enter</kbd> to
+                      create a new one.
                     </v-list-item-title>
                   </v-list-item-content>
                 </v-list-item>
@@ -382,7 +481,7 @@
               <v-btn
                 color="primary"
                 text
-                @click="labelsDialog = false"
+                @click="discardAddLabels(false)"
               >
                 Close
               </v-btn>
@@ -401,16 +500,35 @@
           v-model="labelsConfirmation"
           max-width="500px"
         >
-          <v-card>
+          <v-card v-if="this.labelsToRemoveElements">
             <v-card-title class="labelsDialogTitle">
               <span>Are You Sure?</span>
               <v-spacer></v-spacer>
             </v-card-title>
-            <hr class="divider" style="margin: 0 !important"/>
-            <div style="padding: 12px">
-              <p style="margin: 4px">Following labels will be added:</p>
-              <v-chip style="margin: 4px" v-for="c in labelsToAdd">{{c}}</v-chip>
+
+            <div v-if="labelsToAdd.length !== 0">
+              <hr class="divider" style="margin: 0 !important"/>
+              <div style="padding: 12px">
+                <p style="margin: 4px" class="noLabelsText">Following labels will be added:</p>
+                <v-chip style="margin: 4px" v-for="c in labelsToAdd">{{c}}</v-chip>
+              </div>
             </div>
+
+            <div v-if="calculateLabelsToRemove.length !== 0">
+              <hr class="divider" style="margin: 0 !important"/>
+              <div style="padding: 12px">
+                <p style="margin: 4px" class="noLabelsText">Following labels will be removed:</p>
+                <v-chip style="margin: 4px" v-for="c in calculateLabelsToRemove">{{c}}</v-chip>
+              </div>
+            </div>
+
+            <div v-if="labelsToAdd.length === 0 && calculateLabelsToRemove.length === 0">
+              <hr class="divider" style="margin: 0 !important"/>
+              <div style="padding: 12px">
+                <p style="margin: 4px" class="noLabelsText">No changes made.</p>
+              </div>
+            </div>
+
             <hr class="divider" style="margin: 0 !important"/>
             <v-card-actions>
               <v-btn
@@ -424,11 +542,17 @@
               <v-btn
                 color="primary"
                 text
-                @click="setLabelsMultiple($store.state.item.id, labelsToAdd)"
+                @click="setLabelsMultiple($store.state.item.id, labelsToAdd, calculateLabelsToRemove)"
               >
                 Yes
               </v-btn>
             </v-card-actions>
+            <v-progress-linear
+              v-if="loadingLabelsOperation"
+              color="#EF5350"
+              buffer-value="0"
+              stream
+            ></v-progress-linear>
           </v-card>
         </v-dialog>
         <v-toolbar
@@ -497,11 +621,14 @@
         loadingTree: false,
         loadingTable: false,
         loadingLabels: false,
-        loadingLabelsTable: false,
+        loadingFilteredTable: false,
+        loadingLabelsOperation: false,
 
         labelsDialog: false,
         labelsConfirmation: false,
         labelsToAdd: [],
+        labelsToRemove: [],
+        labelsToRemoveElements: [],
         searchLabels: '',
 
         labelsDialogMultiple: false,
@@ -542,6 +669,43 @@
           }
         }
         return 0;
+      },
+
+      showLocation() {
+        const type = this.$store.state.type;
+        return (type === 'file' || type === 'directory' || type === 'windows-registry-key')
+      },
+
+      calculateLabelsToRemove() {
+
+        if (this.$store.state.item.label) {
+          const elements = Object.keys(this.$store.state.item.label).concat(this.labelsToAdd);
+          const toRemove = [];
+          for (let i = 0; i < this.labelsToRemove.length; i++) {
+            toRemove.push(elements[this.labelsToRemove[i]]);
+          }
+          return toRemove
+        } else {
+          const elements = this.labelsToAdd;
+          const toRemove = [];
+          for (let i = 0; i < this.labelsToRemove.length; i++) {
+            toRemove.push(elements[this.labelsToRemove[i]]);
+          }
+          return toRemove
+        }
+
+      },
+
+      existingLabels() {
+        if (this.$store.state.item.label) {
+          return Object.keys(this.$store.state.item.label);
+        } else {
+          return [];
+        }
+      },
+
+      bottomSheet() {
+        return this.selectedItems.length !== 0;
       },
 
     },
@@ -700,6 +864,7 @@
         let slash = '';
         let column = '';
         const {type} = this.$store.state;
+        this.loadingFilteredTable = true;
 
         if (type === 'directory') {
           slash = '/';
@@ -723,7 +888,9 @@
         }
 
         this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems');
+        this.$store.dispatch('loadItems').then(() => {
+          this.loadingFilteredTable = false;
+        });
       },
 
       searchFilter() {
@@ -802,6 +969,10 @@
         return arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
       },
 
+      removeExistingLabels(arr) {
+        return this.labels.filter((elements) => !arr.includes(elements));
+      },
+
       async getLabels() {
         await pause(1500)
         const that = this;
@@ -816,47 +987,67 @@
       },
 
       setLabel(label, id) {
-
-        let url ='/label?id=' + id + '&label=' + label;
+        let url = '/label?id=' + id + '&label=' + label;
         console.log(url)
-        invoke('GET', url, [], (data) => {
-          console.log(data);
-        })
-
-      },
-
-      unsetLabel(label, id) {
-
-        let url ='/label?id=' + id + '&label=' + label + '&set=false';
-
-        console.log(url)
-
         invoke('GET', url, [], (data) => {
           console.log(data);
         })
       },
 
-      setLabelsMultiple(id, labels) {
-        for (let i = 0; i < labels.length; i += 1) {
-          this.setLabel(labels[i], id)
+      unsetLabel(label, id) {
+        let url = '/label?id=' + id + '&label=' + label + '&set=false';
+        console.log(url)
+        invoke('GET', url, [], (data) => {
+          console.log(data);
+        })
+      },
+
+      async setLabelsMultiple(id, add, remove) {
+        this.loadingLabelsOperation = true;
+        for (let i = 0; i < add.length; i += 1) {
+          this.setLabel(add[i], id)
+          await pause(200)
         }
+        for (let i = 0; i < remove.length; i += 1) {
+          this.unsetLabel(remove[i], id)
+          await pause(200)
+        }
+        this.loadingLabelsOperation = false;
+        await pause(1000)
         this.labelsConfirmation = false;
       },
 
       setLabelsMultipleChunk(items, labels) {
+        this.loadingLabelsOperation = true;
         for (let i = 0; i < items.length; i += 1) {
           this.setLabelsMultiple(items[i].id, labels)
         }
+        this.loadingLabelsOperation = false;
         this.labelsConfirmationMultiple = false;
       },
 
       filterLabels(label) {
         console.log(label);
-        this.loadingLabelsTable = true;
+        this.loadingFilteredTable = true;
         this.$store.commit('setLabelFilter', label);
         this.$store.dispatch('loadItems').then(() => {
-          this.loadingLabelsTable = false;
+          this.loadingFilteredTable = false;
         });
+      },
+
+      discardAddLabels(multiple) {
+        if (multiple) {
+          this.labelsDialogMultiple = false;
+          this.labelsToAddMultiple = [];
+          this.searchLabelsMultiple = '';
+        }
+        else {
+          this.labelsDialog = false
+          this.labelsToAdd = [];
+          this.labelsToRemove = [];
+          this.labelsToRemoveElements = [];
+          this.searchLabels = '';
+        }
       }
 
     },
@@ -898,8 +1089,8 @@
   table tr td
     cursor: pointer !important
 
-  *
-    border-radius: 0 !important
+  // *
+  //  border-radius: 0 !important
 
   .verticalbar
     transition: width .2s
@@ -967,6 +1158,15 @@
       animation: swing
       animation-duration: 0.4s
 
+  .bottomSheetIcon
+    padding: 12px
+    color: white !important
+
+    &:hover
+      color: $c-shadow !important
+      animation: swing
+      animation-duration: 0.4s
+
   .content-left
     transition: $transition-fast
 
@@ -983,6 +1183,7 @@
   .navigationHeader
     font-size: 14px !important
     font-weight: 400 !important
+    padding: 0 !important
 
   .navigationMenuIcon
     color: $c-pink !important
@@ -992,11 +1193,21 @@
     &:hover
       cursor: pointer
 
+  .noLabelsText
+    padding: 0
+    margin: auto
+    font-size: 18px
+    color: $c-pink
+    font-family: 'Roboto Condensed', sans-serif
+
   .labelsDialogTitle
     font-family: 'Roboto Condensed', sans-serif
     letter-spacing: 0.05rem !important
     font-size: 1.5rem !important
     padding: 16px !important
+
+  .bottomSheetStyle
+    border-radius: 10px 10px 0px 0px !important
 
   .fade-fast-enter,
   .fade-fast-leave-to
@@ -1045,5 +1256,36 @@
 
   .text-right
     direction: rtl
+
+  .scrollableArea
+    overflow: auto !important
+    max-height: 94.5vh !important
+
+  .v-expansion-panel-header
+    padding: 0 !important
+    margin: 0 !important
+
+  .v-expansion-panel-content
+    padding: 0 !important
+    margin: 0 !important
+
+  .v-expansion-panel-content__wrap
+    padding: 0 0 16px !important
+
+  .v-slide-group__next, .v-slide-group__prev
+    -ms-flex: 0 1 28px !important
+    flex: 0 1 28px !important
+    min-width: 28px !important
+
+  .v-chip.v-size--default
+    font-size: 12px !important
+    height: 24px !important
+    padding: 8px !important
+
+  .v-expansion-panel::before
+    box-shadow: none !important
+
+  .v-bottom-sheet.v-dialog.v-bottom-sheet--inset
+    max-width: fit-content
 
 </style>

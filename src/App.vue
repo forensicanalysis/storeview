@@ -65,6 +65,10 @@ Author(s): Jonas Plum, Kadir Aslan
 
 <style>
 
+  html {
+    overflow: hidden;
+  }
+
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #fff; /*#B0BEC5;*/

@@ -201,9 +201,6 @@ export default new Vuex.Store({
 
     async loadDirectories({ commit, state }, payload) {
 
-      const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-      await pause(1500)
-
       return new Promise((resolve) => {
 
         const directories = [];

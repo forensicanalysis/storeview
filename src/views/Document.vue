@@ -22,6 +22,28 @@ Author(s): Jonas Plum
 -->
 <template>
   <div>
+    <div style="padding: 2px !important;" v-if="content.label">
+      <v-chip-group
+        center-active
+        show-arrows
+      >
+        <v-chip class="lighten-3"
+                color="grey"
+                text-color="#EF5350"
+                small
+                style="margin: 2px !important"
+                v-for="label in Object.keys(content.label)" :key="label">
+          <v-avatar
+            left
+            class="grey lighten-2"
+            style="margin-left: -33px !important; color: #424242"
+          >
+          </v-avatar>
+          {{ label }}
+        </v-chip>
+      </v-chip-group>
+    </div>
+    <v-divider/>
     <v-tabs small v-model="tab">
       <v-tabs-slider/>
       <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
@@ -145,3 +167,9 @@ Author(s): Jonas Plum
     },
   };
 </script>
+<style lang="sass">
+  .v-slide-group__next, .v-slide-group__prev
+    -ms-flex: 0 1 28px !important
+    flex: 0 1 28px !important
+    min-width: 28px !important
+</style>
