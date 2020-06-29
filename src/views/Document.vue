@@ -22,7 +22,8 @@ Author(s): Jonas Plum
 -->
 <template>
   <div>
-    <div style="padding: 2px !important;" v-if="content.label">
+    <div style="padding: 2px !important;"
+         v-if="content.label && !_.isEmpty(removeFalseLabels(content.label))">
       <v-chip-group
         center-active
         show-arrows
@@ -32,7 +33,7 @@ Author(s): Jonas Plum
                 text-color="#EF5350"
                 small
                 style="margin: 2px !important"
-                v-for="label in Object.keys(content.label)" :key="label">
+                v-for="label in Object.keys(removeFalseLabels(content.label))" :key="label">
           <v-avatar
             left
             class="grey lighten-2"
@@ -165,6 +166,17 @@ Author(s): Jonas Plum
         required: true,
       },
     },
+    methods: {
+      removeFalseLabels(labels) {
+        const filtered = Object.keys(labels).reduce(function (filtered, key) {
+          if (labels[key] === true) {
+            filtered[key] = labels[key];
+          }
+          return filtered;
+        }, {});
+        return filtered;
+      }
+    }
   };
 </script>
 <style lang="sass">

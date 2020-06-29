@@ -157,7 +157,7 @@
                         class="ma-2 lighten-3 navigationChip"
                         color="grey"
                         text-color="#424242"
-                        v-for="label in labels"
+                        v-for="label in removeDuplicates(labels)"
                         small
                         style="margin: 2px !important"
                         @click="filterLabels(label)"
@@ -679,7 +679,7 @@
       calculateLabelsToRemove() {
 
         if (this.$store.state.item.label) {
-          const elements = Object.keys(this.$store.state.item.label).concat(this.labelsToAdd);
+          const elements = this.existingLabels.concat(this.labelsToAdd);
           const toRemove = [];
           for (let i = 0; i < this.labelsToRemove.length; i++) {
             toRemove.push(elements[this.labelsToRemove[i]]);
@@ -698,7 +698,7 @@
 
       existingLabels() {
         if (this.$store.state.item.label) {
-          return Object.keys(this.$store.state.item.label);
+          return Object.keys(this.removeFalseLabels(this.$store.state.item.label));
         } else {
           return [];
         }
@@ -842,6 +842,7 @@
       },
 
       updateopt(e) {
+        this.loadingFilteredTable = true;
         this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
         this.$store.commit('setLimit', e.itemsPerPage);
         const sort = {
@@ -855,9 +856,10 @@
             sort.columns[e.sortBy[i]] = 'ASC';
           }
         }
-
         this.$store.commit('setSort', sort);
-        this.$store.dispatch('loadItems');
+        this.$store.dispatch('loadItems').then(() => {
+          this.loadingFilteredTable = false;
+        })
       },
 
       updatedir(e) {
@@ -969,6 +971,11 @@
         return arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
       },
 
+      removeDuplicates(arr) {
+        const filtered = (arr) => arr.filter((v,i) => arr.indexOf(v) === i)
+        return filtered(arr);
+      },
+
       removeExistingLabels(arr) {
         return this.labels.filter((elements) => !arr.includes(elements));
       },
@@ -1015,15 +1022,18 @@
         this.loadingLabelsOperation = false;
         await pause(1000)
         this.labelsConfirmation = false;
+        this.getLabels();
       },
 
-      setLabelsMultipleChunk(items, labels) {
+      async setLabelsMultipleChunk(items, labels) {
         this.loadingLabelsOperation = true;
         for (let i = 0; i < items.length; i += 1) {
           this.setLabelsMultiple(items[i].id, labels)
         }
         this.loadingLabelsOperation = false;
+        await pause(1000)
         this.labelsConfirmationMultiple = false;
+        this.getLabels();
       },
 
       filterLabels(label) {
@@ -1048,7 +1058,17 @@
           this.labelsToRemoveElements = [];
           this.searchLabels = '';
         }
-      }
+      },
+
+      removeFalseLabels(labels) {
+        const filtered = Object.keys(labels).reduce(function (filtered, key) {
+          if(labels[key] === true) {
+            filtered[key] = labels[key];
+          }
+          return filtered;
+        }, {});
+        return filtered;
+      },
 
     },
 
