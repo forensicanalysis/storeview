@@ -91,7 +91,7 @@
                     <div v-else key="tree">
                       <v-treeview
                         class="tr-2"
-                        v-show="refresh && directories.length > 0 && leftExtended"
+                        v-show="refreshTree && directories.length > 0 && leftExtended"
                         activatable
                         hoverable
                         dense
@@ -132,7 +132,7 @@
             </v-subheader>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
-            <v-list style="padding: 0 !important" dense>
+            <v-list style="padding: 0 !important" dense v-show="refreshLabels">
               <v-list-item-group>
                 <hr class="divider"/>
                 <div v-if="loadingLabels">
@@ -153,24 +153,32 @@
                       </v-icon>
                     </div>
                     <div v-else key="labels">
-                      <v-chip
-                        class="ma-2 lighten-3 navigationChip"
-                        color="grey"
-                        text-color="#424242"
-                        v-for="label in removeDuplicates(labels)"
-                        small
-                        style="margin: 2px !important"
-                        @click="filterLabels(label)"
+                      <v-chip-group
+                        v-model="selectedLabel"
+                        column
+                        active-class="primary--text"
                       >
-                        <v-avatar
-                          left
-                          class="grey lighten-2"
-                          style="margin-left: -12px !important; color: #EF5350"
+                        <v-chip
+                          class="ma-2 lighten-3 navigationChip"
+                          color="grey"
+                          text-color="#424242"
+                          v-for="label in removeDuplicates(labels)"
+                          :key="label"
+                          :value="label"
+                          small
+                          style="margin: 2px !important"
+                          @click="filterLabels(label)"
                         >
-                          {{countOccurrences(labels, label)}}
-                        </v-avatar>
-                        {{label}}
-                      </v-chip>
+                          <v-avatar
+                            left
+                            class="grey lighten-2"
+                            style="margin-left: -12px !important; color: #EF5350"
+                          >
+                            {{countOccurrences(labels, label)}}
+                          </v-avatar>
+                          {{label}}
+                        </v-chip>
+                      </v-chip-group>
                     </div>
                   </transition>
                 </div>
@@ -219,6 +227,9 @@
             </v-sheet>
           </v-bottom-sheet>
 
+          <p>{{selectedLabel}}</p>
+          <p>{{filteredLabel}}</p>
+
           <v-text-field
             v-model="search"
             prepend-inner-icon="mdi-magnify"
@@ -232,6 +243,7 @@
             class="mx-3"
           />
           <v-data-table
+            v-show="refreshTable"
             v-model="selectedItems"
             :headers="$store.state.headers"
             :items="$store.state.items"
@@ -250,7 +262,7 @@
             <template v-slot:body.prepend>
               <tr>
                 <td @click="emptyFilter">
-                  <v-icon v-if="_.isEmpty(filter.columns)" color="primary" small class="ml-1">
+                  <v-icon v-if="_.isEmpty(filter.columns) && filteredLabel === ''" color="primary" small class="ml-1">
                     mdi-filter-outline
                   </v-icon>
                   <v-icon v-else color="primary" small class="ml-1">
@@ -421,13 +433,13 @@
                         filter-icon="mdi-close"
                         style="margin: 2px !important"
                         v-for="label in existingLabels" :key="label">
-<!--                  <v-avatar-->
-<!--                    left-->
-<!--                    class="grey lighten-2"-->
-<!--                    style="margin-left: -33px !important; color: #424242"-->
-<!--                  >-->
-<!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
-<!--                  </v-avatar>-->
+                  <!--                  <v-avatar-->
+                  <!--                    left-->
+                  <!--                    class="grey lighten-2"-->
+                  <!--                    style="margin-left: -33px !important; color: #424242"-->
+                  <!--                  >-->
+                  <!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
+                  <!--                  </v-avatar>-->
                   {{ label }}
                 </v-chip>
                 <p class="noLabelsText"
@@ -441,13 +453,13 @@
                         filter-icon="mdi-close"
                         style="margin: 2px !important"
                         v-for="label in labelsToAdd" :key="label">
-<!--                  <v-avatar-->
-<!--                    left-->
-<!--                    class="grey lighten-2"-->
-<!--                    style="margin-left: -33px !important; color: #424242"-->
-<!--                  >-->
-<!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
-<!--                  </v-avatar>-->
+                  <!--                  <v-avatar-->
+                  <!--                    left-->
+                  <!--                    class="grey lighten-2"-->
+                  <!--                    style="margin-left: -33px !important; color: #424242"-->
+                  <!--                  >-->
+                  <!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
+                  <!--                  </v-avatar>-->
                   {{ label }}
                 </v-chip>
               </v-chip-group>
@@ -613,6 +625,8 @@
     data() {
       return {
 
+        initialLoad: true,
+
         leftExtended: true,
         itemscol: {},
         rightWidth: 0,
@@ -637,9 +651,11 @@
         searchLabelsMultiple: '',
 
         selectedItems: [],
-
         label: '',
         itemID: '',
+
+        selectedLabel: null,
+        filteredLabel: '',
 
         filter: {
           table: this.$store.state.type,
@@ -649,7 +665,10 @@
         search: '',
         active: [],
         open: [],
-        refresh: true,
+
+        refreshTree: true,
+        refreshLabels: true,
+        refreshTable: true,
 
         itemTypeIndex: 0,
         loading: false,
@@ -748,11 +767,45 @@
         return `${bytes.toFixed(1)}${units[u]}`;
       },
 
-      forceRefresh() {
-        this.refresh = false;
+      forceRefreshTree() {
+        this.refreshTree = false;
         this.$nextTick(() => {
-          this.refresh = true;
+          this.refreshTree = true;
         });
+      },
+
+      forceRefreshLabels() {
+        this.refreshLabels = false;
+        this.$nextTick(() => {
+          this.refreshLabels = true;
+        });
+      },
+
+      forceRefreshTable() {
+        this.refreshTable = false;
+        this.$nextTick(() => {
+          this.refreshTable = true;
+        });
+      },
+
+      forceRefreshDetails() {
+        this.$store.state.refreshDetails = false;
+        console.log("-> ",this.$store.state.refreshDetails)
+        this.$nextTick(() => {
+          this.$store.state.refreshDetails = true;
+          console.log("-> ",this.$store.state.refreshDetails)
+        });
+      },
+
+      labelRefresher() {
+
+        this.filterLabels(this.filteredLabel);
+        this.select(this.$store.state.item);
+
+        this.forceRefreshDetails();
+        this.forceRefreshLabels();
+        this.forceRefreshTable();
+
       },
 
       title(element) {
@@ -792,6 +845,7 @@
 
         this.loadingTable = true;
         this.loadingTree = true;
+        this.initialLoad = true;
 
         this.directories = [];
         this.itemscol = {};
@@ -811,7 +865,7 @@
 
             this.getDirectories();
             this.getLabels();
-            this.forceRefresh();
+            this.forceRefreshTree();
 
             this.filter = {
               table: this.$store.state.type,
@@ -823,12 +877,15 @@
 
       emptyFilter() {
         console.log('empty');
+        this.loadingFilteredTable = true;
         this.itemscol = {}
         this.filter = {
           table: this.$store.state.type,
           columns: {},
         };
-        this.searchFilter();
+        this.filteredLabel = '';
+        this.$store.commit('setLabelFilter', '');
+        this.searchFilter()
       },
 
       select(e) {
@@ -842,7 +899,9 @@
       },
 
       updateopt(e) {
-        this.loadingFilteredTable = true;
+        if (!this.initialLoad) {
+          this.loadingFilteredTable = true;
+        }
         this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
         this.$store.commit('setLimit', e.itemsPerPage);
         const sort = {
@@ -858,7 +917,11 @@
         }
         this.$store.commit('setSort', sort);
         this.$store.dispatch('loadItems').then(() => {
-          this.loadingFilteredTable = false;
+          if (this.initialLoad) {
+            this.initialLoad = false;
+          } else {
+            this.loadingFilteredTable = false;
+          }
         })
       },
 
@@ -896,6 +959,7 @@
       },
 
       searchFilter() {
+        this.loadingFilteredTable = true;
         this.filter.table = this.$store.state.type;
 
         let column = '';
@@ -914,7 +978,9 @@
           this.filter.columns.elements = [this.search];
         }
         this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems');
+        this.$store.dispatch('loadItems').then(() => {
+          this.loadingFilteredTable = false;
+        });
       },
 
       clearFilter() {
@@ -972,7 +1038,7 @@
       },
 
       removeDuplicates(arr) {
-        const filtered = (arr) => arr.filter((v,i) => arr.indexOf(v) === i)
+        const filtered = (arr) => arr.filter((v, i) => arr.indexOf(v) === i)
         return filtered(arr);
       },
 
@@ -980,7 +1046,7 @@
         return this.labels.filter((elements) => !arr.includes(elements));
       },
 
-      async getLabels() {
+      async getLabels(refresh=false) {
         await pause(1500)
         const that = this;
         this.labels = [];
@@ -990,6 +1056,9 @@
           }
         }).then(() => {
           this.loadingLabels = false;
+          if(refresh) {
+            this.labelRefresher();
+          }
         })
       },
 
@@ -998,19 +1067,28 @@
         console.log(url)
         invoke('GET', url, [], (data) => {
           console.log(data);
-        })
+        }).then(() => {
+          this.$store.state.item.label[label] = true;
+        });
       },
 
       unsetLabel(label, id) {
-        let url = '/label?id=' + id + '&label=' + label + '&set=false';
-        console.log(url)
-        invoke('GET', url, [], (data) => {
-          console.log(data);
-        })
+        return new Promise((resolve) => {
+          let url = '/label?id=' + id + '&label=' + label + '&set=false';
+          console.log(url)
+          invoke('GET', url, [], (data) => {
+            console.log(data);
+          }).then(() => {
+            this.$store.state.item.label[label] = false;
+          });
+        });
       },
 
-      async setLabelsMultiple(id, add, remove) {
-        this.loadingLabelsOperation = true;
+      async setLabelsMultiple(id, add, remove, chunk=false) {
+        if(!chunk) {
+          this.loadingLabelsOperation = true;
+          console.log("LOADING")
+        }
         for (let i = 0; i < add.length; i += 1) {
           this.setLabel(add[i], id)
           await pause(200)
@@ -1019,29 +1097,38 @@
           this.unsetLabel(remove[i], id)
           await pause(200)
         }
-        this.loadingLabelsOperation = false;
-        await pause(1000)
-        this.labelsConfirmation = false;
-        this.getLabels();
+        if(!chunk) {
+          console.log("LOADING FINISHED")
+          this.loadingLabelsOperation = false;
+          await pause(1000)
+          this.labelsConfirmation = false;
+          this.getLabels(true);
+        }
       },
 
       async setLabelsMultipleChunk(items, labels) {
         this.loadingLabelsOperation = true;
         for (let i = 0; i < items.length; i += 1) {
-          this.setLabelsMultiple(items[i].id, labels)
+          this.setLabelsMultiple(items[i].id, labels, [], true)
         }
         this.loadingLabelsOperation = false;
         await pause(1000)
         this.labelsConfirmationMultiple = false;
-        this.getLabels();
+        this.getLabels(true);
       },
 
       filterLabels(label) {
         console.log(label);
+
+        if(label === this.filteredLabel) {
+          label = ''
+        }
+
         this.loadingFilteredTable = true;
         this.$store.commit('setLabelFilter', label);
         this.$store.dispatch('loadItems').then(() => {
           this.loadingFilteredTable = false;
+          this.filteredLabel = label;
         });
       },
 
@@ -1050,8 +1137,7 @@
           this.labelsDialogMultiple = false;
           this.labelsToAddMultiple = [];
           this.searchLabelsMultiple = '';
-        }
-        else {
+        } else {
           this.labelsDialog = false
           this.labelsToAdd = [];
           this.labelsToRemove = [];
@@ -1062,7 +1148,7 @@
 
       removeFalseLabels(labels) {
         const filtered = Object.keys(labels).reduce(function (filtered, key) {
-          if(labels[key] === true) {
+          if (labels[key] === true) {
             filtered[key] = labels[key];
           }
           return filtered;

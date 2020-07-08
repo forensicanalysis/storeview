@@ -27,6 +27,7 @@ Author(s): Jonas Plum
       <v-chip-group
         center-active
         show-arrows
+        v-show="$store.state.refreshDetails"
       >
         <v-chip class="lighten-3"
                 color="grey"
@@ -45,7 +46,7 @@ Author(s): Jonas Plum
       </v-chip-group>
     </div>
     <v-divider/>
-    <v-tabs small v-model="tab">
+    <v-tabs show-arrows small v-model="tab">
       <v-tabs-slider/>
       <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
         {{view['title']}}

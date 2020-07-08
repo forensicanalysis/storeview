@@ -63,7 +63,12 @@ Author(s): Jonas Plum, Kadir Aslan
   };
 </script>
 
-<style>
+<style lang="scss">
+
+  @import '~vuetify/src/styles/styles.sass';
+  @import './styles/colors.scss';
+  @import './styles/animations.scss';
+  @import '~animate.css';
 
   html {
     overflow: hidden;
@@ -72,6 +77,28 @@ Author(s): Jonas Plum, Kadir Aslan
   body {
     font-family: 'Roboto', sans-serif;
     background-color: #fff; /*#B0BEC5;*/
+  }
+
+  ::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
+  ::-webkit-scrollbar-track {
+    background: none;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-track-piece {
+    background: none;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: $c-pink;
+    height: 50px;
+    border-radius: 10px;
+    border: none;
+  }
+  ::-webkit-scrollbar-corner {
+    background: none;
   }
 
   h1, h2, h3, .v-toolbar__title, .title {

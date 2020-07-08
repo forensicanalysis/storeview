@@ -64,6 +64,8 @@ export default new Vuex.Store({
       alert: { requires: ['plaso', 'compare'] },
     },
 
+    refreshDetails: true,
+
   },
 
   mutations: {
@@ -149,7 +151,7 @@ export default new Vuex.Store({
 
     setLabelFilter(state, data) {
       state.label = data;
-    }
+    },
 
   },
 
