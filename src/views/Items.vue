@@ -611,8 +611,6 @@
   import {LoopingRhombusesSpinner} from 'epic-spinners'
   import {invoke} from "../store/invoke";
 
-  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-
   export default {
 
     name: 'items',
@@ -1013,8 +1011,6 @@
           })
           .catch(error => console.warn(error));
 
-        await pause(1000);
-
         const key = item.path;
         const parentNode = this.$refs.treeView.nodes[key];
 
@@ -1047,7 +1043,6 @@
       },
 
       async getLabels(refresh=false) {
-        await pause(1500)
         const that = this;
         this.labels = [];
         invoke('GET', '/labels', [], (data) => {
@@ -1091,16 +1086,13 @@
         }
         for (let i = 0; i < add.length; i += 1) {
           this.setLabel(add[i], id)
-          await pause(200)
         }
         for (let i = 0; i < remove.length; i += 1) {
           this.unsetLabel(remove[i], id)
-          await pause(200)
         }
         if(!chunk) {
           console.log("LOADING FINISHED")
           this.loadingLabelsOperation = false;
-          await pause(1000)
           this.labelsConfirmation = false;
           this.getLabels(true);
         }
@@ -1112,7 +1104,6 @@
           this.setLabelsMultiple(items[i].id, labels, [], true)
         }
         this.loadingLabelsOperation = false;
-        await pause(1000)
         this.labelsConfirmationMultiple = false;
         this.getLabels(true);
       },

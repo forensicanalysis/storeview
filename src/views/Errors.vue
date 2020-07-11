@@ -21,8 +21,6 @@
 <script>
   import {invoke} from "../store/invoke";
 
-  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-
   export default {
     name: 'errors',
     data() {
@@ -41,8 +39,6 @@
 
     methods: {
       async loadFiles() {
-
-        await pause(1500)
 
         invoke('GET', '/errors', [], (data) => {
           this.errors = data.elements;

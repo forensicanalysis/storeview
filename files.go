@@ -59,11 +59,11 @@ func loadFile() *cobraserver.Command {
 			}
 			defer teardown()
 
-			f, err := store.LoadFile(p)
+			f, teardownFile, err := store.LoadFile(p)
 			if err != nil {
 				return err
 			}
-			defer f.Close()
+			defer teardownFile()
 			_, err = io.Copy(w, f)
 			return err
 		},

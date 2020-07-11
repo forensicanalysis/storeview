@@ -80,8 +80,7 @@ func listTree() *cobraserver.Command {
 
 			var children []string
 
-			conn, connTeardown := store.Connection()
-			defer connTeardown()
+			conn := store.Connection()
 
 			stmt, err := conn.Prepare(query)
 			if err != nil {
@@ -229,8 +228,7 @@ func listTables() *cobraserver.Command {
 			}
 			defer teardown()
 
-			conn, connTeardown := store.Connection()
-			defer connTeardown()
+			conn := store.Connection()
 
 			q := "SELECT " +
 				"json_extract(json, '$.type') as type, " +
@@ -294,8 +292,7 @@ func label() *cobraserver.Command {
 				return err
 			}
 
-			conn, connTeardown := store.Connection()
-			defer connTeardown()
+			conn := store.Connection()
 
 			stmt, err := conn.Prepare(fmt.Sprintf(
 				"UPDATE elements "+
@@ -336,8 +333,7 @@ func labels() *cobraserver.Command {
 			}
 			defer teardown()
 
-			conn, connTeardown := store.Connection()
-			defer connTeardown()
+			conn := store.Connection()
 
 			q := "SELECT json_extract(json, '$.label') AS labels " +
 				"FROM elements " +
@@ -492,8 +488,7 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 	if found {
 		count = countCached.(int64)
 	} else {
-		conn, teardown := store.Connection()
-		defer teardown()
+		conn := store.Connection()
 
 		fmt.Println(countQuery)
 		stmt, err := conn.Prepare(countQuery)
