@@ -158,9 +158,6 @@ export default new Vuex.Store({
   actions: {
 
     async loadItems({ commit, state }) {
-      const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-      await pause(2000)
-
       let url = `/items?type=${state.type}`;
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {
         Vue._.forEach(state.filter.columns, (value, column) => {
@@ -202,7 +199,10 @@ export default new Vuex.Store({
     },
 
     async loadDirectories({ commit, state }, payload) {
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
       return new Promise((resolve) => {
 
         const directories = [];
