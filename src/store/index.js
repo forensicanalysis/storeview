@@ -48,6 +48,8 @@ export default new Vuex.Store({
     offset: 0,
     templates,
 
+    label: '',
+
     item: {},
     listPane: 80,
 
@@ -61,6 +63,8 @@ export default new Vuex.Store({
       compare: { requires: ['hash'] },
       alert: { requires: ['plaso', 'compare'] },
     },
+
+    refreshDetails: true,
 
   },
 
@@ -145,6 +149,10 @@ export default new Vuex.Store({
       state.filter = data;
     },
 
+    setLabelFilter(state, data) {
+      state.label = data;
+    },
+
   },
 
   actions: {
@@ -174,6 +182,9 @@ export default new Vuex.Store({
           }
         });
       }
+      if (state.label !== '') {
+        url += `&labels=${state.label}`;
+      }
 
       url += `&offset=${state.offset}`;
       url += `&limit=${state.limit}`;
@@ -188,6 +199,10 @@ export default new Vuex.Store({
     },
 
     async loadDirectories({ commit, state }, payload) {
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
       return new Promise((resolve) => {
 
         const directories = [];
@@ -250,6 +265,12 @@ export default new Vuex.Store({
       commit('setOffset', data);
       dispatch('loadItems');
     },
+
+    updateLabel({ commit, dispatch }, data) {
+      commit('setLabelFilter', data);
+      dispatch('loadItems');
+    },
+
   },
 
   modules: {},

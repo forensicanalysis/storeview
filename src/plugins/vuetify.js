@@ -59,7 +59,7 @@ export default new Vuetify({
         sidebar: colors.blueGrey.darken3,
         secondary: colors.blue.lighten1,
         accent: colors.pink.darken2,
-        background: colors.blueGrey.lighten5,
+        background: '#fff', /*colors.blueGrey.lighten5,*/
         toolbar: '#000',
       },
       dark: {
