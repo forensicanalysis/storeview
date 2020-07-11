@@ -58,8 +58,7 @@ func logs() *cobraserver.Command {
 
 			var children []forensicstore.JSONElement
 
-			connection, connectionTeardown := store.Connection()
-			defer connectionTeardown()
+			connection := store.Connection()
 
 			stmt, err := connection.Prepare("SELECT * FROM logs ORDER BY insert_time ASC")
 			if err != nil {

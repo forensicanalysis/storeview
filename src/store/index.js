@@ -103,10 +103,12 @@ export default new Vuex.Store({
         const headers = [];
         const keys = Vue._.keys(data[0]);
         for (let i = 0; i < keys.length; i += 1) {
-          headers.push({
-            text: Vue._.startCase(keys[i]),
-            value: keys[i],
-          });
+          if (keys[i] !== "id" && keys[i] !== "type") {
+            headers.push({
+              text: Vue._.startCase(keys[i]),
+              value: keys[i],
+            });
+          }
         }
         return headers;
       };
@@ -199,10 +201,6 @@ export default new Vuex.Store({
     },
 
     async loadDirectories({ commit, state }, payload) {
-<<<<<<< HEAD
-=======
-
->>>>>>> master
       return new Promise((resolve) => {
 
         const directories = [];

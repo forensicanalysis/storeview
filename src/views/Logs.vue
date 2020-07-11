@@ -48,8 +48,6 @@
   import {invoke} from "../store/invoke";
   import {DateTime} from "luxon";
 
-  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-
   export default {
     name: 'logs',
     data() {
@@ -99,7 +97,6 @@
 
     methods: {
       async loadFiles() {
-        await pause(1500)
         invoke('GET', '/logs', [], (data) => {
           console.log(data);
           this.logs = data.elements;
