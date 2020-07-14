@@ -23,8 +23,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/docker/docker/image/cache"
 	"github.com/forensicanalysis/forensicstore"
+	"github.com/patrickmn/go-cache"
 	"time"
 )
 
