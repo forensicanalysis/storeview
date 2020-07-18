@@ -19,7 +19,7 @@
 //
 // Author(s): Jonas Plum
 
-package main
+package commands
 
 import (
 	"encoding/json"
@@ -35,7 +35,7 @@ import (
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func listTree() *cobraserver.Command {
+func ListTree() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "listTree",
 		Route:  "/tree",
@@ -104,7 +104,7 @@ func listTree() *cobraserver.Command {
 	}
 }
 
-func selectItems() *cobraserver.Command {
+func SelectItems() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "selectItems",
 		Route:  "/items",
@@ -215,7 +215,7 @@ func selectItems() *cobraserver.Command {
 	}
 }
 
-func listTables() *cobraserver.Command {
+func ListTables() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "listTables",
 		Route:  "/tables",
@@ -259,7 +259,7 @@ func listTables() *cobraserver.Command {
 	}
 }
 
-func label() *cobraserver.Command {
+func Label() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "label",
 		Route:  "/label",
@@ -320,7 +320,7 @@ func label() *cobraserver.Command {
 	}
 }
 
-func labels() *cobraserver.Command {
+func Labels() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "labels",
 		Route:  "/labels",
@@ -377,7 +377,7 @@ func labels() *cobraserver.Command {
 	}
 }
 
-func query() *cobraserver.Command {
+func Query() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "query",
 		Route:  "/query",

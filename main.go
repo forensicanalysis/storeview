@@ -28,6 +28,7 @@ import (
 	"github.com/markbates/pkger"
 
 	"github.com/forensicanalysis/storeview/cobraserver"
+	"github.com/forensicanalysis/storeview/commands"
 )
 
 //go:generate yarn install
@@ -38,9 +39,12 @@ import (
 func main() {
 	var staticPath pkger.Dir = "/dist"
 	rootCmd := cobraserver.Application(
-		"fstore", 800, 600, staticPath, false,
-		listTables(), selectItems(), loadFile(), listTree(), listTasks(),
-		files(), logs(), errorsCommand(), label(), labels(), query(), runTask(),
+		"fstore",
+		800,
+		600,
+		staticPath,
+		false,
+		commands.Commands...,
 	)
 
 	if err := rootCmd.Execute(); err != nil {

@@ -19,7 +19,7 @@
 //
 // Author(s): Jonas Plum
 
-package main
+package commands
 
 import (
 	"io"
@@ -31,7 +31,7 @@ import (
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func errorsCommand() *cobraserver.Command {
+func ErrorsCommand() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "listErrors",
 		Route:  "/errors",

@@ -19,61 +19,23 @@
 //
 // Author(s): Jonas Plum
 
-package main
+package commands
 
 import (
 	"encoding/json"
-	"errors"
+	"github.com/spf13/pflag"
 	"io"
 	"net/http"
-	"path"
-	"time"
-
-	"github.com/spf13/pflag"
+	"strings"
 
 	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func loadFile() *cobraserver.Command {
+func Logs() *cobraserver.Command {
 	return &cobraserver.Command{
-		Name:   "loadFile",
-		Route:  "/file",
-		Method: http.MethodGet,
-		SetupFlags: func(f *pflag.FlagSet) {
-			f.String("path", "", "path")
-		},
-		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
-			p, err := flags.GetString("path")
-			if err != nil {
-				return err
-			}
-			if p == "" {
-				return errors.New("path must be set")
-			}
-
-			storeName := flags.Args()[0]
-			store, teardown, err := forensicstore.Open(storeName)
-			if err != nil {
-				return err
-			}
-			defer teardown()
-
-			f, teardownFile, err := store.LoadFile(p)
-			if err != nil {
-				return err
-			}
-			defer teardownFile()
-			_, err = io.Copy(w, f)
-			return err
-		},
-	}
-}
-
-func files() *cobraserver.Command {
-	return &cobraserver.Command{
-		Name:   "listFiles",
-		Route:  "/files",
+		Name:   "listLogs",
+		Route:  "/logs",
 		Method: http.MethodGet,
 		SetupFlags: func(f *pflag.FlagSet) {
 			f.String("path", "", "path")
@@ -94,31 +56,36 @@ func files() *cobraserver.Command {
 			}
 			defer teardown()
 
-			root, err := store.Fs.Open(p)
-			if err != nil {
-				return err
-			}
-			infos, err := root.Readdir(0)
-			if err != nil {
-				return err
-			}
-
 			var children []forensicstore.JSONElement
-			for _, info := range infos {
+
+			connection := store.Connection()
+
+			stmt, err := connection.Prepare("SELECT * FROM logs ORDER BY insert_time ASC")
+			if err != nil {
+				return err
+			}
+			for {
+				if hasRow, err := stmt.Step(); err != nil {
+					return err
+				} else if !hasRow {
+					break
+				}
+				msg := stmt.GetText("msg")[20:]
+				parts := strings.SplitN(msg, ":", 3)
 				b, _ := json.Marshal(struct {
-					Name    string    `json:"name"`
-					Path    string    `json:"path"`
-					Size    int64     `json:"size"`
-					Dir     bool      `json:"dir"`
-					ModTime time.Time `json:"mtime"`
+					Message string `json:"message"`
+					File    string `json:"file"`
+					Time    string `json:"time"`
 				}{
-					info.Name(),
-					path.Join(p, info.Name()),
-					info.Size(),
-					info.IsDir(),
-					info.ModTime(),
+					strings.TrimSpace(parts[2]),
+					parts[0] + ":" + parts[1],
+					stmt.GetText("insert_time"),
 				})
 				children = append(children, b)
+			}
+			err = stmt.Finalize()
+			if err != nil {
+				return err
 			}
 
 			return cobraserver.PrintJSONList(w, int64(len(children)), children)

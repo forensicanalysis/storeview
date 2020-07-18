@@ -19,7 +19,7 @@
 //
 // Author(s): Jonas Plum
 
-package main
+package commands
 
 import (
 	"encoding/json"
@@ -36,7 +36,7 @@ import (
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func listTasks() *cobraserver.Command {
+func ListTasks() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "listTasks",
 		Route:  "/tasks",
@@ -60,7 +60,7 @@ func listTasks() *cobraserver.Command {
 	}
 }
 
-func runTask() *cobraserver.Command {
+func RunTask() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "run",
 		Route:  "/run",

@@ -23,7 +23,15 @@ import axios from 'axios';
 
 export function invoke(method, url, arg, callback) {
   return new Promise((resolve) => {
-    if (window.external.invoke !== undefined) {
+    if (window.astilectron !== undefined) {
+      window.astilectron.sendMessage({"name": url, "payload": arg}, function(message) {
+        console.log(message);
+        if (message.payload !== undefined) {
+          callback(message.payload);
+          resolve(message.payload);
+        }
+      });
+    } else if (window.external.invoke !== undefined) {
       // local mode
       window.external.invoke(JSON.stringify(arg));
     } else {

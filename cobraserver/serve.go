@@ -40,9 +40,21 @@ func setupResponse(w *http.ResponseWriter, req *http.Request) {
 }
 
 func ServeCommand(staticPath pkger.Dir, commands ...*Command) *cobra.Command {
-	router := mux.NewRouter()
-
 	serveCmd := &cobra.Command{Use: "serve", Short: "Start the api server"}
+	router := Router(commands, serveCmd.Flags().Args())
+	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(staticPath)))
+
+	var port int
+	serveCmd.Run = func(_ *cobra.Command, _ []string) {
+		http.Handle("/", router)
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	}
+	serveCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "port")
+	return serveCmd
+}
+
+func Router(commands []*Command, args []string) *mux.Router {
+	router := mux.NewRouter()
 
 	re := regexp.MustCompile(`^(\w+)(?:\[(.+)\])?$`)
 
@@ -65,7 +77,7 @@ func ServeCommand(staticPath pkger.Dir, commands ...*Command) *cobra.Command {
 					argsString = append(argsString, "--"+submatches[0][1], group+value)
 				}
 			}
-			argsString = append(argsString, serveCmd.Flags().Args()...)
+			argsString = append(argsString, args...)
 			flagset := &pflag.FlagSet{}
 			setupFlags(&command, flagset, "json")
 			flagset.Parse(argsString)
@@ -77,13 +89,5 @@ func ServeCommand(staticPath pkger.Dir, commands ...*Command) *cobra.Command {
 		}).Methods(command.Method, http.MethodOptions)
 	}
 
-	router.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(staticPath)))
-
-	var port int
-	serveCmd.Run = func(_ *cobra.Command, _ []string) {
-		http.Handle("/", router)
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
-	}
-	serveCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "port")
-	return serveCmd
+	return router
 }
