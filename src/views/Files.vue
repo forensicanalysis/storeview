@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div>
+  <div class="scrollableArea">
     <v-breadcrumbs :items="breadcrumbs">
       <v-breadcrumbs-item
         slot="item"

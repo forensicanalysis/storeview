@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"log"
+	"path/filepath"
 )
 
 // Constants
@@ -28,6 +27,7 @@ var (
 var (
 	debug = flag.Bool("d", true, "enables the debug mode")
 	w     *astilectron.Window
+	app   *astilectron.Astilectron
 )
 
 func main() {
@@ -46,18 +46,6 @@ func main() {
 }
 
 func options(l *log.Logger) bootstrap.Options {
-	openWindow := bootstrap.Window{
-		Homepage:       "open.html",
-		MessageHandler: open,
-		Options: &astilectron.WindowOptions{
-			BackgroundColor: astikit.StrPtr("#333"),
-			Center:          astikit.BoolPtr(true),
-			Height:          astikit.IntPtr(200),
-			Width:           astikit.IntPtr(300),
-			TitleBarStyle:   astilectron.TitleBarStyleHidden,
-		},
-	}
-
 	return bootstrap.Options{
 		Asset:    Asset,
 		AssetDir: AssetDir,
@@ -94,53 +82,82 @@ func options(l *log.Logger) bootstrap.Options {
 				{Role: astilectron.MenuItemRoleClose},
 			},
 		}},
-		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
+		OnWait: func(a *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = ws[0]
-			go func() {
-				time.Sleep(5 * time.Second)
-				if err := bootstrap.SendMessage(w, "check.out.menu", "Don't forget to check out the menu!"); err != nil {
-					l.Println(fmt.Errorf("sending check.out.menu event failed: %w", err))
-				}
-			}()
+			app = a
 			return nil
 		},
 		RestoreAssets: RestoreAssets,
-		Windows: []*bootstrap.Window{&openWindow, {
-			Homepage:       "index.html",
-			MessageHandler: handleMessages,
+		Windows: []*bootstrap.Window{{
+			Homepage:       "open.html",
+			MessageHandler: open,
 			Options: &astilectron.WindowOptions{
 				BackgroundColor: astikit.StrPtr("#333"),
 				Center:          astikit.BoolPtr(true),
-				Height:          astikit.IntPtr(800),
-				Width:           astikit.IntPtr(1024),
+				Height:          astikit.IntPtr(170),
+				Width:           astikit.IntPtr(480),
 				TitleBarStyle:   astilectron.TitleBarStyleHiddenInset,
+				Resizable:       astikit.BoolPtr(false),
+				Minimizable:     astikit.BoolPtr(false),
 			},
 		}},
 	}
 }
 
-/*
-func storeWindow(store string) {
-
-	w := bootstrap.Window{
-		Homepage:       "index.html",
-		MessageHandler: handleMessages(store),
-		Options: &astilectron.WindowOptions{
-			BackgroundColor: astikit.StrPtr("#333"),
-			Center:          astikit.BoolPtr(true),
-			Height:          astikit.IntPtr(800),
-			Width:           astikit.IntPtr(1024),
-			TitleBarStyle:   astilectron.TitleBarStyleHiddenInset,
-		},
+func cl(e astilectron.Event) (deleteListener bool) {
+	windowCount--
+	if windowCount == 0 {
+		w.Show()
 	}
+	return true
+}
 
-	l := log.New(log.Writer(), log.Prefix(), log.Flags())
-	l.SetFlags(log.LstdFlags | log.Lshortfile)
-	o := options(l)
-	o.Windows = []*bootstrap.Window{&w}
-	err := bootstrap.Run(o)
+var windowCount = 0
+
+func storeWindow(store string) error {
+	url := filepath.Join(app.Paths().DataDirectory(), "resources", "app", "index.html")
+	window, err := app.NewWindow(url, &astilectron.WindowOptions{
+		Title:         astikit.StrPtr(filepath.Base(store)),
+		Center:        astikit.BoolPtr(true),
+		Height:        astikit.IntPtr(800),
+		Width:         astikit.IntPtr(1024),
+		TitleBarStyle: astilectron.TitleBarStyleHiddenInset,
+	})
 	if err != nil {
-		panic(err)
+		return err
+	}
+	window.OnMessage(handleMessages(window, handleStoreMessages(store), nil))
+	window.On(astilectron.EventNameWindowEventClosed, cl)
+	w.Hide()
+	windowCount++
+
+	return window.Create()
+}
+
+func handleMessages(w *astilectron.Window, messageHandler bootstrap.MessageHandler, l astikit.SeverityLogger) astilectron.ListenerMessage {
+	return func(m *astilectron.EventMessage) (v interface{}) {
+		// Unmarshal message
+		var i bootstrap.MessageIn
+		var err error
+		if err = m.Unmarshal(&i); err != nil {
+			l.Error(fmt.Errorf("unmarshaling message %+v failed: %w", *m, err))
+			return
+		}
+
+		// Handle message
+		var p interface{}
+		if p, err = messageHandler(w, i); err != nil {
+			l.Error(fmt.Errorf("handling message %+v failed: %w", i, err))
+		}
+
+		// Return message
+		if p != nil {
+			o := &bootstrap.MessageOut{Name: i.Name + ".callback", Payload: p}
+			if err != nil {
+				o.Name = "error"
+			}
+			v = o
+		}
+		return
 	}
 }
-*/

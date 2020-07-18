@@ -28,7 +28,7 @@ Author(s): Jonas Plum
       :style="'width: ' + leftWidth + 'px'"
       style="border-right: 1px solid rgba(0, 0, 0, 0.12); overflow-x: hidden !important;"
     >
-      <v-expansion-panels accordion multiple>
+      <v-expansion-panels v-model="panel" accordion multiple>
         <v-expansion-panel>
           <v-expansion-panel-header>
             <v-subheader class="navigationHeader tr-2">
@@ -647,6 +647,8 @@ Author(s): Jonas Plum
 
         initialLoad: true,
 
+        panel: [0, 1, 2],
+
         leftExtended: true,
         itemscol: {},
         rightWidth: 0,
@@ -1199,14 +1201,20 @@ Author(s): Jonas Plum
 
 </script>
 
+<style scoped>
+  table tr td {
+    cursor: pointer !important;
+  }
+  .v-expansion-panel--active>.v-expansion-panel-header {
+    min-height: 48px;
+  }
+</style>
+
 <style lang="sass">
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
   @import '../styles/animations.scss'
   @import '~animate.css'
-
-  table tr td
-    cursor: pointer !important
 
   // *
   //  border-radius: 0 !important
@@ -1375,10 +1383,6 @@ Author(s): Jonas Plum
 
   .text-right
     direction: rtl
-
-  .scrollableArea
-    overflow: auto !important
-    max-height: 94.5vh !important
 
   .v-expansion-panel-header
     padding: 0 !important

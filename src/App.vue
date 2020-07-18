@@ -23,10 +23,11 @@ Author(s): Jonas Plum, Kadir Aslan
 
 <template>
   <v-app :style="{background: $vuetify.theme.themes['light'].background}">
-    <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex: 0">
+    <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex: 0; background-color: #dddddd;">
       <v-tab v-for="(menuitem, idx) in menu" :key="menuitem.name"
              @click="$router.push({ name: menuitem.route }).catch(err => {})"
-             :class="{ 'primary--text' : $router.currentRoute.name === menuitem.route}" text>
+             :class="{ 'primary--text' : $router.currentRoute.name === menuitem.route}"
+             text>
         <v-icon style="opacity: 0.3" class="mr-2" small v-text="'mdi-'+menuitem.icon"/>
         {{menuitem.name}}
       </v-tab>
@@ -79,9 +80,17 @@ Author(s): Jonas Plum, Kadir Aslan
     background-color: #fff; /*#B0BEC5;*/
   }
 
+  .v-application--wrap {
+    height: 100vh;
+  }
+
+  .scrollableArea {
+    overflow: auto !important;
+  }
+
   ::-webkit-scrollbar {
-    width: 2px;
-    height: 2px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: none;
@@ -94,7 +103,7 @@ Author(s): Jonas Plum, Kadir Aslan
   ::-webkit-scrollbar-thumb {
     background-color: $c-pink;
     height: 50px;
-    border-radius: 10px;
+    border-radius: 0px;
     border: none;
   }
   ::-webkit-scrollbar-corner {
@@ -109,8 +118,8 @@ Author(s): Jonas Plum, Kadir Aslan
     font-weight: 400 !important;
   }
 
-  .v-btn--fab {
-    border-radius: 0;
+  * {
+    border-radius: 0 !important;
   }
 
   .v-toolbar__content {

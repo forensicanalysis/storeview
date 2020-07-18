@@ -21,31 +21,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div>
+  <div class="scrollableArea">
     <v-data-table
       :headers="headers"
       :items="logs"
       :loading="loading"
       :fixed-header="true"
-      :footer-props="{'items-per-page-options': [50, 100]}"
+      :footer-props="{'items-per-page-options': [25, 50, 100]}"
       :items-per-page="10"
-      style="overflow: visible !important;"
-      show-select
       dense
     >
       <template v-slot:body.prepend>
         <tr>
-          <td class="filterIcon" @click="emptyFilter">
-            <v-icon
-              v-if="checkFiltersEmpty"
-              color="primary"
-              small class="ml-1">
-              mdi-filter-outline
-            </v-icon>
-            <v-icon v-else color="primary" small class="ml-1" >
-              mdi-filter-remove-outline
-            </v-icon>
-          </td>
           <td v-for="h in headers"
               :key="h.text" role="columnheader"
               scope="col">

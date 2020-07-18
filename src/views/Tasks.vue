@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <v-container class="task" fluid>
+  <v-container class="task scrollableArea" fluid>
     <v-row class="pt-3" v-for="(task, name) in tasks" :key="name">
       <v-col cols="2" class="py-0">
         <v-checkbox

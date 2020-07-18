@@ -21,23 +21,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <v-data-table
-    :headers="headers"
-    :items="errors"
-    :loading="loading"
-    :fixed-header="true"
-    :footer-props="{'items-per-page-options': [50, 100]}"
-    :items-per-page="25"
-    style="overflow: visible !important;"
-    dense
-  >
-    <template v-slot:item.title="{ item }">
-      <div>{{ title(item) }}</div>
-    </template>
-    <template v-slot:item.description="{ item }">
-      <div>{{ description(item) }}</div>
-    </template>
-  </v-data-table>
+  <div class="scrollableArea">
+    <v-data-table
+      :headers="headers"
+      :items="errors"
+      :loading="loading"
+      :fixed-header="true"
+      :footer-props="{'items-per-page-options': [50, 100]}"
+      :items-per-page="25"
+      dense
+    >
+      <template v-slot:item.title="{ item }">
+        <div>{{ title(item) }}</div>
+      </template>
+      <template v-slot:item.description="{ item }">
+        <div>{{ description(item) }}</div>
+      </template>
+    </v-data-table>
+  </div>
 </template>
 
 <script>
