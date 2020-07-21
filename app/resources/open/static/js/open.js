@@ -9,7 +9,9 @@ let open = {
 
     let newButton = document.createElement("button");
     newButton.className = "inactive";
-    // newButton.onclick = function() { index.explore() };
+    newButton.onclick = function () {
+      main.new()
+    };
     newButton.innerHTML = `<i class="fa fa-plus"></i><span>New forensicstore</span>`;
     document.getElementById("menu").appendChild(newButton);
 
@@ -31,8 +33,8 @@ let open = {
   listen: function () {
     astilectron.onMessage(function (message) {
       switch (message.name) {
-          case "menu-open":
-              return {payload: "payload"};
+        case "menu-open":
+          return {payload: "payload"};
       }
     });
   }

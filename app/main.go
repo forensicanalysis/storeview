@@ -31,6 +31,7 @@ var (
 	fileWindows   []*astilectron.Window
 	app           *astilectron.Astilectron
 	menu          *astilectron.Menu
+	l             *log.Logger
 )
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	// Create logger
-	l := log.New(log.Writer(), log.Prefix(), log.Flags())
+	l = log.New(log.Writer(), log.Prefix(), log.Flags())
 	l.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// Run bootstrap
@@ -88,7 +89,10 @@ func menuItems() []*astilectron.MenuItemOptions {
 					bootstrap.SendMessage(mainWindow, "menu-open", nil)
 					return false
 				}},
-				{Label: astikit.StrPtr("New forensicstore"), Accelerator: astilectron.NewAccelerator("CommandOrControl", "n"), Enabled: astikit.BoolPtr(false)},
+				{Label: astikit.StrPtr("New forensicstore"), Accelerator: astilectron.NewAccelerator("CommandOrControl", "n"), OnClick: func(e astilectron.Event) (deleteListener bool) {
+					bootstrap.SendMessage(mainWindow, "menu-new", nil)
+					return false
+				}},
 				{Label: astikit.StrPtr("Import disk image"), Accelerator: astilectron.NewAccelerator("CommandOrControl", "i"), Enabled: astikit.BoolPtr(false)},
 				{Type: astilectron.MenuItemTypeSeparator},
 				{Label: astikit.StrPtr("Close"), Accelerator: astilectron.NewAccelerator("CommandOrControl", "w"), OnClick: func(e astilectron.Event) (deleteListener bool) {
@@ -172,37 +176,30 @@ func storeWindow(store string) error {
 		Width:         astikit.IntPtr(1024),
 		TitleBarStyle: astilectron.TitleBarStyleHiddenInset,
 	}
+
 	window, err := app.NewWindow(url, o)
 	if err != nil {
-		log.Println("store window 0")
 		return err
 	}
-	log.Println("store window 1")
-	window.OnMessage(handleMessages(window, handleStoreMessages(store), nil))
+	window.OnMessage(handleMessages(window, handleStoreMessages(store), astikit.AdaptStdLogger(l)))
 	window.On(astilectron.EventNameWindowEventClosed, func(e astilectron.Event) (deleteListener bool) {
 		windowCount--
 		return true
 	})
-	log.Println("store window 2")
 	window.On(astilectron.EventNameWindowEventFocus, func(e astilectron.Event) (deleteListener bool) {
 		activeWindow = window
 		return false
 	})
 
-	log.Println("store window 3")
 	if fileWindows == nil {
 		fileWindows = []*astilectron.Window{}
 	}
 	fileWindows = append(fileWindows, window)
 
-	log.Println("store window 4")
 	if startupWindow.IsShown() {
 		startupWindow.Hide()
 	}
-	log.Println("store window 5")
 	windowCount++
-
-	log.Println("Create window")
 
 	return window.Create()
 }

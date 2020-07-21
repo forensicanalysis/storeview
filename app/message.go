@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
 	"github.com/forensicanalysis/storeview/commands"
 	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
 	"log"
 	"net/http"
 	"net/url"
@@ -34,9 +36,29 @@ type closingBuffer struct{ *bytes.Buffer }
 func (c closingBuffer) Close() error { return nil }
 
 func open(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
-	if m.Name == "open" {
-		log.Println("XXXX open")
-		return nil, storeWindow(strings.Trim(string(m.Payload), "\""))
+	storePath := strings.Trim(string(m.Payload), "\"")
+
+	switch m.Name {
+	case "new":
+		_, teardown, err := forensicstore.New(storePath)
+		if err != nil {
+			return nil, err
+		}
+		defer teardown()
+		return nil, storeWindow(storePath)
+	case "import-image":
+		_, teardown, err := forensicstore.New(storePath)
+		if err != nil {
+			return nil, err
+		}
+		defer teardown()
+
+		var cmd *cobra.Command // := dockerCommand("import-image", "forensicanalysis/elementary-import-image:v0.3.1", nil)
+		cmd.Run(cmd, []string{storePath})
+
+		return nil, storeWindow(storePath)
+	case "open":
+		return nil, storeWindow(storePath)
 	}
 	return
 }
