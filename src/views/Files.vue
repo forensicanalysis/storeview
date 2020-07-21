@@ -37,6 +37,7 @@ Author(s): Jonas Plum
       :items="files"
       :fixed-header="true"
       :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+      :items-per-page="25"
       style="overflow: visible !important;"
       dense
     >

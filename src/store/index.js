@@ -158,7 +158,6 @@ export default new Vuex.Store({
   },
 
   actions: {
-
     async loadItems({ commit, state }) {
       let url = `/items?type=${state.type}`;
       if (!Vue._.isEmpty(state.filter) && state.filter.type !== '' && !Vue._.isEmpty(state.filter.columns)) {

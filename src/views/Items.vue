@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div class="d-flex flex-row" style="width: 100%">
+  <div class="d-flex flex-row" style="overflow: hidden">
     <div
       ref="drawerLeft"
       class="flex-grow-0 flex-shrink-0 verticalbar scrollableArea"
@@ -127,12 +127,12 @@ Author(s): Jonas Plum
                         color="primary"
                         ref="treeView"
                       >
-                        <template v-slot:prepend="{ item, open }">
+                        <!--template v-slot:prepend="{ item, open }">
                           <v-icon v-if="item.children">
                             {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
                           </v-icon>
                           <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-                        </template>
+                        </template -->
                       </v-treeview>
                     </div>
                   </transition>
@@ -211,7 +211,7 @@ Author(s): Jonas Plum
       </v-expansion-panels>
       <v-divider/>
       <div class="d-flex justify-end">
-        <v-btn small icon @click="toogleLeft">
+        <v-btn small icon @click="toogleLeft" class="menu-hide">
           <v-icon class="navigationDrawerIcon"
                   :class="{'rotate180': !leftExtended}">mdi-chevron-left
           </v-icon>
@@ -276,7 +276,7 @@ Author(s): Jonas Plum
             :fixed-header="true"
             @click:row="select"
             :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-            :items-per-page="50"
+            :items-per-page="25"
             show-select
             style="overflow: visible !important;"
             dense
@@ -1210,205 +1210,10 @@ Author(s): Jonas Plum
   }
 </style>
 
-<style lang="sass">
-  @import '~vuetify/src/styles/styles.sass'
-  @import '../styles/colors.scss'
-  @import '../styles/animations.scss'
-  @import '~animate.css'
-
-  // *
-  //  border-radius: 0 !important
-
-  .verticalbar
-    transition: width .2s
-
-  .v-treeview-node__label, .v-data-table .v-text-field, .v-data-table .v-label
-    font-size: 0.8125rem
-
-  .v-data-table .v-label--active
-    opacity: 0
-
-  .v-data-table .v-text-field > .v-input__control > .v-input__slot:before
-    border-style: none
-
-  .v-text-field
-    padding-top: 0
-    margin-top: 0
-
-  .v-data-table--fixed-header .v-data-table__wrapper
-    overflow-y: hidden
-  // overflow-wrap: anywhere
-
-  .v-list-item__icon
-    min-width: max-content
-    font-size: 12px
-    line-height: 2
-
-  .v-application--is-ltr .v-list-item__icon:first-child
-    margin-right: 8px
-    margin-top: 6px
-
-  .v-list--dense .v-subheader
-    font-size: 0.75rem
-    font-weight: bold
-
-  .v-input .v-label
-    font-size: 12px
-
-  .navigationDrawerIcon
-    transition: $transition-fast
-    -moz-transition: $transition-fast
-    -webkit-transition: $transition-fast
-
-    &:hover
-      background: none !important
-      box-shadow: none !important
-      transition: $transition-fast
-      color: $c-pink !important
-
-  .rotate180
-    -ms-transform-origin: 50% 50%
-    -webkit-transform-origin: 50% 50%
-    -moz-transform-origin: 50% 50%
-    transform-origin: 50% 50%
-    transform: rotate(180deg)
-    -moz-transform: rotate(180deg)
-    -webkit-transform: rotate(180deg)
-    -o-transform: rotate(180deg)
-    -ms-transform: rotate(180deg)
-
-  .detailsIcon
-    padding: 8px
-
-    &:hover
-      color: $c-pink !important
-      animation: swing
-      animation-duration: 0.4s
-
-  .bottomSheetIcon
-    padding: 12px
-    color: white !important
-
-    &:hover
-      color: $c-shadow !important
-      animation: swing
-      animation-duration: 0.4s
-
-  .content-left
-    transition: $transition-fast
-
-  .content-right
-    transition: $transition-fast
-
-  .divider
-    margin-top: 3px
-    margin-bottom: 0
-    border: 0
-    width: 100%
-    border-top: 1px solid $c-pink
-
-  .navigationHeader
-    font-size: 14px !important
-    font-weight: 400 !important
-    padding: 0 !important
-
-  .navigationMenuIcon
-    color: $c-pink !important
-    transition: $transition-fast !important
-
-  .navigationChip
-    &:hover
-      cursor: pointer
-
-  .noLabelsText
-    padding: 0
-    margin: auto
-    font-size: 18px
-    color: $c-pink
-    font-family: 'Roboto Condensed', sans-serif
-
-  .labelsDialogTitle
-    font-family: 'Roboto Condensed', sans-serif
-    letter-spacing: 0.05rem !important
-    font-size: 1.5rem !important
-    padding: 16px !important
-
-  .bottomSheetStyle
-    border-radius: 10px 10px 0px 0px !important
-
-  .fade-fast-enter,
-  .fade-fast-leave-to
-    visibility: hidden
-    width: 0
-    opacity: 0
-    padding-left: 0
-    overflow-wrap: unset !important
-    white-space: nowrap !important
-
-  .fade-fast-enter-active,
-  .fade-fast-leave-active
-    transition: all 100ms
-
-  .fade-slow-enter,
-  .fade-slow-leave-to
-    visibility: hidden
-    opacity: 0
-
-  .fade-slow-enter-active,
-  .fade-slow-leave-active
-    transition: all .25s ease-in-out
-
-  .tf-1
-    transition: $transition-fastest
-
-  .tf-2
-    transition: $transition-faster
-
-  .tf-3
-    transition: $transition-fast
-
-  .tf-4
-    transition: $transition-slow
-
-  .tf-5
-    transition: $transition-slower
-
-  .tf-6
-    transition: $transition-slowest
-
-  .o-0
-    opacity: 0
-    width: 0 !important
-    white-space: nowrap !important
-
-  .text-right
-    direction: rtl
-
-  .v-expansion-panel-header
-    padding: 0 !important
-    margin: 0 !important
-
-  .v-expansion-panel-content
-    padding: 0 !important
-    margin: 0 !important
-
-  .v-expansion-panel-content__wrap
-    padding: 0 0 16px !important
-
-  .v-slide-group__next, .v-slide-group__prev
-    -ms-flex: 0 1 28px !important
-    flex: 0 1 28px !important
-    min-width: 28px !important
-
-  .v-chip.v-size--default
-    font-size: 12px !important
-    height: 24px !important
-    padding: 8px !important
-
-  .v-expansion-panel::before
-    box-shadow: none !important
-
-  .v-bottom-sheet.v-dialog.v-bottom-sheet--inset
-    max-width: fit-content
-
+<style lang="scss">
+  @import '~vuetify/src/styles/styles.sass';
+  @import '../styles/colors.scss';
+  @import '../styles/animations.scss';
+  @import '~animate.css';
+  @import "../styles/items.sass";
 </style>

@@ -15,11 +15,13 @@ html, body {
 body {
     display: flex;
     flex-direction: row;
+    user-select: none;
+    font-family: caption, sans-serif;
 }
 
 img {
     float: left;
-    height: 150px;
+    height: 100vh;
     flex-grow: 0;
 }
 
@@ -28,7 +30,7 @@ img {
     float: right;
     display: flex;
     flex-direction: column;
-    height: 150px;
+    height: 100vh;
     justify-content: space-between;
 }
 

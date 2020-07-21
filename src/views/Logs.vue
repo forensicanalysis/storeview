@@ -27,8 +27,8 @@ Author(s): Jonas Plum
       :items="logs"
       :loading="loading"
       :fixed-header="true"
-      :footer-props="{'items-per-page-options': [25, 50, 100]}"
-      :items-per-page="10"
+      :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+      :items-per-page="25"
       dense
     >
       <template v-slot:body.prepend>

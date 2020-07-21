@@ -23,7 +23,7 @@ Author(s): Jonas Plum, Kadir Aslan
 
 <template>
   <v-app :style="{background: $vuetify.theme.themes['light'].background}">
-    <v-tabs style="border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex: 0; background-color: #dddddd;">
+    <v-tabs class="main-bar" style="border-bottom: 1px solid rgba(0, 0, 0, 0.12); flex: 0;">
       <v-tab v-for="(menuitem, idx) in menu" :key="menuitem.name"
              @click="$router.push({ name: menuitem.route }).catch(err => {})"
              :class="{ 'primary--text' : $router.currentRoute.name === menuitem.route}"
@@ -58,9 +58,6 @@ Author(s): Jonas Plum, Kadir Aslan
         ],
       };
     },
-    created() {
-      this.$store.dispatch('created');
-    },
   };
 </script>
 
@@ -76,7 +73,9 @@ Author(s): Jonas Plum, Kadir Aslan
   }
 
   body {
-    font-family: 'Roboto', sans-serif;
+    /* font-family: 'Roboto', sans-serif; */
+    user-select: none; /* TODO: disable in server mode */
+    font-family: caption, sans-serif;
     background-color: #fff; /*#B0BEC5;*/
   }
 
@@ -88,6 +87,7 @@ Author(s): Jonas Plum, Kadir Aslan
     overflow: auto !important;
   }
 
+  /*
   ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -109,6 +109,7 @@ Author(s): Jonas Plum, Kadir Aslan
   ::-webkit-scrollbar-corner {
     background: none;
   }
+  */
 
   h1, h2, h3, .v-toolbar__title, .title {
     font-family: 'Roboto-Slab', serif;
@@ -116,6 +117,10 @@ Author(s): Jonas Plum, Kadir Aslan
 
   .v-toolbar .v-btn__content {
     font-weight: 400 !important;
+  }
+
+  .theme--light.v-tabs.main-bar>.v-tabs-bar {
+    background-color: #e8e8e8;
   }
 
   * {

@@ -99,7 +99,7 @@ export const templates = {
       {
         text: 'Path',
         value: 'path',
-        align: 'right',
+        align: 'left',
       }, {
         text: 'Accessed',
         value: 'atime',
@@ -115,4 +115,151 @@ export const templates = {
       },
     ],
   },
+  'hotfix': {
+    icon: 'bandage',
+    headers: [
+      {
+        text: 'Hotfix',
+        value: 'Hotfix',
+        align: 'left',
+      }, {
+        text: 'Source',
+        value: 'Source',
+        align: 'left',
+      }, {
+        text: 'Component',
+        value: 'Component',
+        align: 'left',
+      }, {
+        text: 'Installed',
+        value: 'Installed',
+        align: 'right',
+      },
+    ],
+  },
+  event: {
+    icon: 'chart-timeline',
+    headers: [
+      {
+        text: 'Timestamp',
+        value: 'timestamp',
+        align: 'left',
+      }, {
+        text: 'Description',
+        value: 'timestamp_desc',
+        align: 'left',
+      }, {
+        text: 'Message',
+        value: 'message',
+        align: 'left',
+      }, {
+        text: 'Parser',
+        value: 'parser',
+        align: 'left',
+      },
+    ],
+  },
+  eventlog: {
+    icon: 'calendar-clock',
+    headers: [
+      {
+        text: 'Computer',
+        value: 'System.Computer',
+        align: 'left',
+      }, {
+        text: 'SystemTime',
+        value: 'System.TimeCreated.SystemTime',
+        align: 'right',
+      }, {
+        text: 'EventRecordID',
+        value: 'System.EventRecordID',
+        align: 'right',
+      }, {
+        text: 'EventID',
+        value: 'System.EventID.Value',
+        align: 'right',
+      }, {
+        text: 'Level',
+        value: 'System.Level',
+        align: 'right',
+      }, {
+        text: 'Channel',
+        value: 'System.Channel',
+        align: 'left',
+      }, {
+        text: 'Provider',
+        value: 'System.Provider.Name',
+        align: 'left',
+      },
+    ],
+  },
+  'known_network': {
+    icon: 'lan',
+    headers: [
+      {
+        text: 'Friendly Name',
+        value: 'Friendly Name',
+        align: 'left',
+      }, {
+        text: 'GUID',
+        value: 'GUID',
+        align: 'left',
+      }, {
+        text: 'IPs',
+        value: 'IPs',
+        align: 'right',
+      }, {
+        text: 'SubNetMask',
+        value: 'SubNetMask',
+        align: 'right',
+      }, {
+        text: 'NameServer',
+        value: 'NameServer',
+        align: 'left',
+      }, {
+        text: 'DHCP',
+        value: 'DHCP',
+        align: 'right',
+      }, {
+        text: 'IP Key Changed',
+        value: 'IP Key Changed',
+        align: 'right',
+      }, {
+        text: 'Network Key Changed',
+        value: 'Network Key Changed',
+        align: 'right',
+      },
+    ],
+  },
+  'uninstall_entry': {
+    icon: 'delete-sweep',
+    headers: [
+      {
+        text: 'Name',
+        value: 'Name',
+        align: 'left',
+      }, {
+        text: 'Version',
+        value: 'Version',
+        align: 'right',
+      }, {
+        text: 'Publisher',
+        value: 'Publisher',
+        align: 'left',
+      }, {
+        text: 'InstallDate',
+        value: 'InstallDate',
+        align: 'right',
+      }, {
+        text: 'Source',
+        value: 'Source',
+        align: 'left',
+      }, {
+        text: 'Location',
+        value: 'Location',
+        align: 'left',
+      },
+    ],
+  },
+
 };

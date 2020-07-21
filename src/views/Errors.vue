@@ -27,7 +27,7 @@ Author(s): Jonas Plum
       :items="errors"
       :loading="loading"
       :fixed-header="true"
-      :footer-props="{'items-per-page-options': [50, 100]}"
+      :footer-props="{'items-per-page-options': [10, 25, 50, 1000]}"
       :items-per-page="25"
       dense
     >
