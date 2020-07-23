@@ -36,6 +36,12 @@ import (
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
+type Task struct {
+	Name        string
+	Description string
+	Schema      *forensicworkflows.JSONSchema
+}
+
 func ListTasks() *cobraserver.Command {
 	return &cobraserver.Command{
 		Name:   "listTasks",
@@ -48,11 +54,14 @@ func ListTasks() *cobraserver.Command {
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			runCmd := forensicworkflows.Run()
 			commands := runCmd.Commands()
-			children := map[string]forensicworkflows.JSONSchema{}
+			var children []Task
 			for _, command := range commands {
 				schema := flagsToSchema(command.Flags())
-				children[command.Name()] = schema
-				// children = append(children, command.Name())
+				children = append(children, Task{
+					Name:        command.Name(),
+					Description: command.Short,
+					Schema:      &schema,
+				})
 			}
 
 			return cobraserver.PrintAny(w, children)

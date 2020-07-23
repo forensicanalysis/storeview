@@ -45,8 +45,17 @@ Author(s): Jonas Plum
           <v-expansion-panel-content>
             <v-list style="padding: 0 !important" dense>
               <hr class="divider"/>
-              <v-list-item-group v-model="itemTypeIndex" color="primary">
-                <v-list-item @click="loadList('')">
+              <div v-if="loadingType">
+                <v-spacer/>
+                <looping-rhombuses-spinner
+                  style="margin: 0 auto; padding: 20px"
+                  :animation-duration="2500"
+                  :rhombus-size="15"
+                  color="#EF5350"
+                />
+              </div>
+              <v-list-item-group v-else v-model="itemTypeIndex" color="primary">
+                <v-list-item @click="loadType('')">
                   <v-list-item-icon>
                     <v-icon>mdi-file-multiple</v-icon>
                   </v-list-item-icon>
@@ -55,15 +64,15 @@ Author(s): Jonas Plum
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item
-                  v-for="(table, i) in _.sortBy($store.state.tables, ['name'])"
+                  v-for="(table, i) in _.sortBy(tables, ['name'])"
                   :key="i"
-                  @click="loadList(table['name'])"
+                  @click="loadType(table['name'])"
                   class="px-4"
                 >
                   <v-list-item-icon>
                     <v-icon
-                      v-if="_.has($store.state.templates[table['name']], 'icon')"
-                      v-text="'mdi-'+$store.state.templates[table['name']].icon"/>
+                      v-if="_.has(templates[table['name']], 'icon')"
+                      v-text="'mdi-'+templates[table['name']].icon"/>
                     <v-icon v-else>mdi-file-outline</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
@@ -98,7 +107,7 @@ Author(s): Jonas Plum
                   <looping-rhombuses-spinner
                     style="margin: 0 auto; padding: 20px"
                     :animation-duration="2500"
-                    :rhombus-size="10"
+                    :rhombus-size="15"
                     color="#EF5350"
                   />
                 </div>
@@ -113,7 +122,7 @@ Author(s): Jonas Plum
                     <div v-else key="tree">
                       <v-treeview
                         class="tr-2"
-                        v-show="refreshTree && directories.length > 0 && leftExtended"
+                        v-show="directories.length > 0 && leftExtended"
                         activatable
                         hoverable
                         dense
@@ -127,12 +136,12 @@ Author(s): Jonas Plum
                         color="primary"
                         ref="treeView"
                       >
-                        <!--template v-slot:prepend="{ item, open }">
+                        <template v-slot:prepend="{ item, open }">
                           <v-icon v-if="item.children">
                             {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
                           </v-icon>
                           <v-icon v-if="!item.children">mdi-folder-outline</v-icon>
-                        </template -->
+                        </template>
                       </v-treeview>
                     </div>
                   </transition>
@@ -154,7 +163,7 @@ Author(s): Jonas Plum
             </v-subheader>
           </v-expansion-panel-header>
           <v-expansion-panel-content>
-            <v-list style="padding: 0 !important" dense v-show="refreshLabels">
+            <v-list style="padding: 0 !important" dense>
               <v-list-item-group>
                 <hr class="divider"/>
                 <div v-if="loadingLabels">
@@ -162,7 +171,7 @@ Author(s): Jonas Plum
                   <looping-rhombuses-spinner
                     style="margin: 0 auto; padding: 20px"
                     :animation-duration="2500"
-                    :rhombus-size="10"
+                    :rhombus-size="15"
                     color="#EF5350"
                   />
                 </div>
@@ -222,110 +231,97 @@ Author(s): Jonas Plum
       <div style="overflow-x: hidden; transition: width 0.2s ease-in; min-height: 88vh;"
            class="pt-3 flex-shrink-1 flex-grow-1 scrollableArea"
       >
-        <div v-if="loadingTable">
-          <looping-rhombuses-spinner
-            style="margin: 0 auto"
-            :animation-duration="2500"
-            :rhombus-size="10"
-            color="#EF5350"
-          />
-        </div>
-        <div v-else>
-          <v-bottom-sheet v-model="bottomSheet"
-                          inset
-                          hide-overlay
-                          no-click-animation
-                          persistent>
-            <v-sheet class="text-center bottomSheetStyle"
-                     height="auto"
-                     style="background: #EF5350">
-              <v-btn
-                small
-                icon
-                @click="labelsDialogMultiple = true"
-              >
-                <v-icon class="bottomSheetIcon">mdi-label-outline</v-icon>
-              </v-btn>
-            </v-sheet>
-          </v-bottom-sheet>
+        <v-bottom-sheet v-model="bottomSheet"
+                        inset
+                        hide-overlay
+                        no-click-animation
+                        persistent>
+          <v-sheet class="text-center bottomSheetStyle"
+                   height="auto"
+                   style="background: #EF5350">
+            <v-btn
+              small
+              icon
+              @click="labelsDialogMultiple = true"
+            >
+              <v-icon class="bottomSheetIcon">mdi-label-outline</v-icon>
+            </v-btn>
+          </v-sheet>
+        </v-bottom-sheet>
 
-          <p>{{selectedLabel}}</p>
-          <p>{{filteredLabel}}</p>
+        <v-text-field
+          v-model="search"
+          prepend-inner-icon="mdi-magnify"
+          clear-icon="mdi-close-circle"
+          clearable
+          dense
+          outlined
+          @keyup.enter.native="searchFilter"
+          @click:append="searchFilter"
+          @click:clear="clearFilter"
+          class="mx-3"
+        />
+        <v-data-table
+          v-model="selectedItems"
+          :headers="headers"
+          :items="items"
+          :loading="loadElementsTable"
+          :server-items-length="itemCount"
+          @update:options="updateopt"
+          :fixed-header="true"
+          @click:row="select"
+          :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
+          :items-per-page="25"
+          :hide-default-footer="itemCount <= 25"
+          show-select
+          style="overflow: visible !important;"
+          dense
+        >
+          <template v-slot:body.prepend>
+            <tr>
+              <td @click="emptyFilter">
+                <v-icon v-if="_.isEmpty(filter.columns) && filteredLabel === ''" color="primary"
+                        small class="ml-1">
+                  mdi-filter-outline
+                </v-icon>
+                <v-icon v-else color="primary" small class="ml-1">
+                  mdi-filter-remove-outline
+                </v-icon>
+              </td>
+              <td v-for="h in headers"
+                  :key="h.text" role="columnheader"
+                  scope="col">
+                <v-text-field
+                  v-model="itemscol[h.value]"
+                  @keyup.enter.native="searchFilter"
+                  hide-details
+                  label="Filter"
+                  :reverse="h.align === 'right'"
+                  clearable
+                />
+              </td>
+            </tr>
+          </template>
 
-          <v-text-field
-            v-model="search"
-            prepend-inner-icon="mdi-magnify"
-            clear-icon="mdi-close-circle"
-            clearable
-            dense
-            outlined
-            @keyup.enter.native="searchFilter"
-            @click:append="searchFilter"
-            @click:clear="clearFilter"
-            class="mx-3"
-          />
-          <v-data-table
-            v-show="refreshTable"
-            v-model="selectedItems"
-            :headers="$store.state.headers"
-            :items="$store.state.items"
-            :loading="loadingFilteredTable"
-            :options.sync="options"
-            :server-items-length="$store.state.itemCount"
-            @update:options="updateopt"
-            :fixed-header="true"
-            @click:row="select"
-            :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-            :items-per-page="25"
-            show-select
-            style="overflow: visible !important;"
-            dense
-          >
-            <template v-slot:body.prepend>
-              <tr>
-                <td @click="emptyFilter">
-                  <v-icon v-if="_.isEmpty(filter.columns) && filteredLabel === ''" color="primary" small class="ml-1">
-                    mdi-filter-outline
-                  </v-icon>
-                  <v-icon v-else color="primary" small class="ml-1">
-                    mdi-filter-remove-outline
-                  </v-icon>
-                </td>
-                <td v-for="h in $store.state.headers"
-                    :key="h.text" role="columnheader"
-                    scope="col">
-                  <v-text-field
-                    v-model="itemscol[h.value]"
-                    @keyup.enter.native="searchFilter"
-                    hide-details
-                    label="Filter"
-                    :reverse="h.align === 'right'"
-                    clearable
-                  />
-                </td>
-              </tr>
-            </template>
-
-            <template v-slot:item.title="{ item }">
-              <div>{{ title(item) }}</div>
-            </template>
-            <template v-slot:item.atime="{ item }">
-              <div>{{ toLocal(item.atime) }}</div>
-            </template>
-            <template v-slot:item.mtime="{ item }">
-              <div>{{ toLocal(item.mtime) }}</div>
-            </template>
-            <template v-slot:item.ctime="{ item }">
-              <div>{{ toLocal(item.ctime) }}</div>
-            </template>
-            <template v-slot:item.origin="{ item }">
-              <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
-            </template>
-            <template v-slot:item.size="{ item }">
-              <div>{{ humanBytes(item.size, true) }}</div>
-            </template>
-          </v-data-table>
-        </div>
+          <template v-slot:item.title="{ item }">
+            <div>{{ title(item) }}</div>
+          </template>
+          <template v-slot:item.atime="{ item }">
+            <div>{{ toLocal(item.atime) }}</div>
+          </template>
+          <template v-slot:item.mtime="{ item }">
+            <div>{{ toLocal(item.mtime) }}</div>
+          </template>
+          <template v-slot:item.ctime="{ item }">
+            <div>{{ toLocal(item.ctime) }}</div>
+          </template>
+          <template v-slot:item.origin="{ item }">
+            <div><span v-if="'path' in item.origin">{{item.origin.path}}</span></div>
+          </template>
+          <template v-slot:item.size="{ item }">
+            <div>{{ humanBytes(item.size, true) }}</div>
+          </template>
+        </v-data-table>
       </div>
       <div
         :style="'width: ' + rightWidth + '%'"
@@ -576,7 +572,7 @@ Author(s): Jonas Plum
               <v-btn
                 color="primary"
                 text
-                @click="setLabelsMultiple($store.state.item.id, labelsToAdd, calculateLabelsToRemove)"
+                @click="setLabelsMultiple(item.id, labelsToAdd, calculateLabelsToRemove)"
               >
                 Yes
               </v-btn>
@@ -590,19 +586,19 @@ Author(s): Jonas Plum
           </v-card>
         </v-dialog>
         <v-toolbar
-          v-if="!_.isEmpty($store.state.item)"
+          v-if="!_.isEmpty(item)"
           class="elevation-0 ml-2 mr-0"
           dense>
-          <v-toolbar-title>{{ $store.state.item.id }}</v-toolbar-title>
+          <v-toolbar-title>{{ item.id }}</v-toolbar-title>
           <v-spacer/>
           <v-toolbar-items>
-            <v-btn
+            <!--v-btn
               small
               icon
               @click="labelsDialog = true"
             >
               <v-icon class="detailsIcon">mdi-label-outline</v-icon>
-            </v-btn>
+            </v-btn-->
             <v-btn
               small
               icon
@@ -621,7 +617,7 @@ Author(s): Jonas Plum
           </v-toolbar-items>
         </v-toolbar>
         <v-divider class="mx-0"/>
-        <item :content="$store.state.item"/>
+        <item :content="item"/>
       </div>
     </div>
   </div>
@@ -632,6 +628,8 @@ Author(s): Jonas Plum
   import item from '@/views/Document.vue';
   import {LoopingRhombusesSpinner} from 'epic-spinners'
   import {invoke} from "../store/invoke";
+  import {templates} from "../store/templates";
+  import Vue from "vue";
 
   export default {
 
@@ -644,8 +642,24 @@ Author(s): Jonas Plum
 
     data() {
       return {
+        type: '',
+        items: [],
+        itemCount: 0,
+        headers: [],
+        sort: {
+          type: '',
+          columns: {},
+        },
+        filter: {
+          type: '',
+          columns: {},
+        },
+        limit: 25,
+        offset: 0,
+        templates,
 
-        initialLoad: true,
+        item: {},
+        listPane: 80,
 
         panel: [0, 1, 2],
 
@@ -654,11 +668,11 @@ Author(s): Jonas Plum
         rightWidth: 0,
         leftWidth: 250,
 
-        loadingTree: false,
-        loadingTable: false,
-        loadingLabels: false,
-        loadingFilteredTable: false,
-        loadingLabelsOperation: false,
+        loadingType: true,
+        loadingTree: true,
+        loadingLabels: true,
+        loadElementsTable: true,
+        loadingLabelsOperation: true,
 
         labelsDialog: false,
         labelsConfirmation: false,
@@ -679,47 +693,36 @@ Author(s): Jonas Plum
         selectedLabel: null,
         filteredLabel: '',
 
-        filter: {
-          table: this.$store.state.type,
-          columns: {},
-        },
-
         search: '',
         active: [],
         open: [],
 
-        refreshTree: true,
-        refreshLabels: true,
-        refreshTable: true,
-
         itemTypeIndex: 0,
-        loading: false,
-        options: {},
+        // options: {},
 
         directories: [],
         labels: [],
+        tables: [],
       };
     },
 
     computed: {
-
       count() {
-        for (let i = 0; i < this.$store.state.tables.length; i += 1) {
-          if (this.$store.state.type === this.$store.state.tables[i].name) {
-            return this.$store.state.tables[i].count;
+        for (let i = 0; i < this.tables.length; i += 1) {
+          if (this.type === this.tables[i].name) {
+            return this.tables[i].count;
           }
         }
         return 0;
       },
 
       showLocation() {
-        const type = this.$store.state.type;
+        const type = this.type;
         return (type === 'file' || type === 'directory' || type === 'windows-registry-key')
       },
 
       calculateLabelsToRemove() {
-
-        if (this.$store.state.item.label) {
+        if (this.item.label) {
           const elements = this.existingLabels.concat(this.labelsToAdd);
           const toRemove = [];
           for (let i = 0; i < this.labelsToRemove.length; i++) {
@@ -734,12 +737,11 @@ Author(s): Jonas Plum
           }
           return toRemove
         }
-
       },
 
       existingLabels() {
-        if (this.$store.state.item.label) {
-          return Object.keys(this.removeFalseLabels(this.$store.state.item.label));
+        if (this.item.label) {
+          return Object.keys(this.removeFalseLabels(this.item.label));
         } else {
           return [];
         }
@@ -748,11 +750,8 @@ Author(s): Jonas Plum
       bottomSheet() {
         return this.selectedItems.length !== 0;
       },
-
     },
-
     methods: {
-
       toogleLeft() {
         if (this.leftWidth !== 56) {
           this.leftWidth = 56;
@@ -789,50 +788,9 @@ Author(s): Jonas Plum
         return `${bytes.toFixed(1)}${units[u]}`;
       },
 
-      forceRefreshTree() {
-        this.refreshTree = false;
-        this.$nextTick(() => {
-          this.refreshTree = true;
-        });
-      },
-
-      forceRefreshLabels() {
-        this.refreshLabels = false;
-        this.$nextTick(() => {
-          this.refreshLabels = true;
-        });
-      },
-
-      forceRefreshTable() {
-        this.refreshTable = false;
-        this.$nextTick(() => {
-          this.refreshTable = true;
-        });
-      },
-
-      forceRefreshDetails() {
-        this.$store.state.refreshDetails = false;
-        console.log("-> ",this.$store.state.refreshDetails)
-        this.$nextTick(() => {
-          this.$store.state.refreshDetails = true;
-          console.log("-> ",this.$store.state.refreshDetails)
-        });
-      },
-
-      labelRefresher() {
-
-        this.filterLabels(this.filteredLabel);
-        this.select(this.$store.state.item);
-
-        this.forceRefreshDetails();
-        this.forceRefreshLabels();
-        this.forceRefreshTable();
-
-      },
-
       title(element) {
-        if (_.has(this.$store.state.templates, element['type'])) {
-          return element[this.$store.state.templates[element['type']].headers[0].value];
+        if (_.has(this.templates, element['type'])) {
+          return element[this.templates[element['type']].headers[0].value];
         }
         if (_.has(element, 'name')) {
           return element['name'];
@@ -846,72 +804,63 @@ Author(s): Jonas Plum
         return '';
       },
 
-      async getDirectories() {
+      getDirectories() {
         this.loadingTree = true;
-        const that = this;
+        let that = this;
         if (this.directories.length === 0) {
-          this.$store.dispatch('loadDirectories', {path: ''})
-            .then((response) => {
-              for (let i = 0; i < response.length; i += 1) {
-                if (response[i].name !== '/') {
-                  that.directories.push(response[i]);
-                }
-              }
-              this.loadingTree = false;
-            })
-            .catch(error => console.warn(error));
+          this.loadDirectories('', (directories) => {
+            that.directories = directories
+          });
+          this.loadingTree = false;
         }
       },
 
-      async loadList(table) {
-
-        this.loadingTable = true;
+      loadType(table) {
         this.loadingTree = true;
-        this.initialLoad = true;
 
         this.directories = [];
         this.itemscol = {};
         this.active = [];
         this.open = [];
 
-        this.$store.commit('setItem', {});
+        this.item = {};
         this.rightNull();
-        this.$store.commit('setTable', table);
-        this.$store.dispatch('loadItems')
-          .then(() => {
-            for (let i = 0; i < this.$store.state.headers.length; i += 1) {
-              this.itemscol[this.$store.state.headers[i].value] = '';
-            }
+        this.sort = {
+          table: '',
+          columns: {},
+        };
+        this.filter = {
+          type: '',
+          columns: {},
+        };
+        this.type = table;
+        console.log("li1");
+        this.loadItems();
+        for (let i = 0; i < this.headers.length; i += 1) {
+          this.itemscol[this.headers[i].value] = '';
+        }
 
-            this.loadingTable = false;
+        this.getDirectories();
 
-            this.getDirectories();
-            this.getLabels();
-            this.forceRefreshTree();
-
-            this.filter = {
-              table: this.$store.state.type,
-              columns: {},
-            };
-
-          });
+        this.filter = {
+          type: this.type,
+          columns: {},
+        };
       },
 
       emptyFilter() {
-        console.log('empty');
-        this.loadingFilteredTable = true;
         this.itemscol = {}
         this.filter = {
-          table: this.$store.state.type,
+          type: this.type,
           columns: {},
         };
         this.filteredLabel = '';
-        this.$store.commit('setLabelFilter', '');
+        this.label = '';
         this.searchFilter()
       },
 
       select(e) {
-        this.$store.commit('setItem', e);
+        this.item = e;
         this.rightHalf();
       },
 
@@ -921,13 +870,10 @@ Author(s): Jonas Plum
       },
 
       updateopt(e) {
-        if (!this.initialLoad) {
-          this.loadingFilteredTable = true;
-        }
-        this.$store.commit('setOffset', (e.page - 1) * e.itemsPerPage);
-        this.$store.commit('setLimit', e.itemsPerPage);
+        this.offset = (e.page - 1) * e.itemsPerPage;
+        this.limit = e.itemsPerPage;
         const sort = {
-          table: this.$store.state.type,
+          table: this.type,
           columns: {},
         };
         for (let i = 0; i < e.sortBy.length; i += 1) {
@@ -937,52 +883,42 @@ Author(s): Jonas Plum
             sort.columns[e.sortBy[i]] = 'ASC';
           }
         }
-        this.$store.commit('setSort', sort);
-        this.$store.dispatch('loadItems').then(() => {
-          if (this.initialLoad) {
-            this.initialLoad = false;
-          } else {
-            this.loadingFilteredTable = false;
-          }
-        })
+        this.sort = sort;
+        console.log("li2");
+        this.loadItems();
       },
 
       updatedir(e) {
+        console.log("updatedir");
         let slash = '';
         let column = '';
-        const {type} = this.$store.state;
-        this.loadingFilteredTable = true;
 
-        if (type === 'directory') {
+        if (this.type === 'directory') {
           slash = '/';
           column = 'path';
-        } else if (type === 'file') {
+        } else if (this.type === 'file') {
           slash = '/';
           column = 'origin.path';
-        } else if (type === 'windows-registry-key') {
+        } else if (this.type === 'windows-registry-key') {
           slash = '\\';
           column = 'key';
         } else {
           console.log('TABLE DOES NOT EXIST!');
         }
 
+        this.filter.type = this.type;
         if (e.length === 0) {
-          this.filter.table = type;
           this.filter.columns[column] = [];
         } else {
-          this.filter.table = type;
           this.filter.columns[column] = [e[0] + slash];
         }
 
-        this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems').then(() => {
-          this.loadingFilteredTable = false;
-        });
+        console.log("li3");
+        this.loadItems();
       },
 
       searchFilter() {
-        this.loadingFilteredTable = true;
-        this.filter.table = this.$store.state.type;
+        this.filter.type = this.type;
 
         let column = '';
 
@@ -999,10 +935,8 @@ Author(s): Jonas Plum
         if (this.search !== '') {
           this.filter.columns.elements = [this.search];
         }
-        this.$store.commit('setFilter', this.filter);
-        this.$store.dispatch('loadItems').then(() => {
-          this.loadingFilteredTable = false;
-        });
+        console.log("li4");
+        this.loadItems();
       },
 
       clearFilter() {
@@ -1019,38 +953,31 @@ Author(s): Jonas Plum
       },
 
       async fetchTreeChildren(item) {
-        const directories = [];
-
-        this.$store.dispatch('loadDirectories', {path: item.path})
-          .then((response) => {
-            if ((response.length === 1) && (response[0].name === '/')) {
+        return new Promise((resolve) => {
+          let that = this;
+          this.loadDirectories(item.path, (directories) => {
+            if ((directories.length === 1) && (directories[0].name === '/')) {
               delete item.children;
-            } else {
-              for (let i = 0; i < response.length; i += 1) {
-                if (response[i].name !== '/') {
-                  directories.push(response[i]);
-                }
-              }
             }
-          })
-          .catch(error => console.warn(error));
+            const key = item.path;
+            const parentNode = that.$refs.treeView.nodes[key];
 
-        const key = item.path;
-        const parentNode = this.$refs.treeView.nodes[key];
+            let childNode;
+            directories.forEach((child) => {
+              childNode = {
+                ...parentNode,
+                item: child,
+                vnode: null,
+              };
+              that.$refs.treeView.nodes[child.path] = childNode;
+            });
 
-        let childNode;
-        directories.forEach((child) => {
-          childNode = {
-            ...parentNode,
-            item: child,
-            vnode: null,
-          };
-          this.$refs.treeView.nodes[child.path] = childNode;
-        });
-
-        for (let i = 0; i < directories.length; i += 1) {
-          item.children.push(directories[i]);
-        }
+            for (let i = 0; i < directories.length; i += 1) {
+              item.children.push(directories[i]);
+            }
+            resolve();
+          });
+        })
       },
 
       countOccurrences(arr, val) {
@@ -1066,47 +993,35 @@ Author(s): Jonas Plum
         return this.labels.filter((elements) => !arr.includes(elements));
       },
 
-      async getLabels(refresh=false) {
+      getLabels() {
+        this.loadingLabels = true;
         const that = this;
         this.labels = [];
         invoke('GET', '/labels', [], (data) => {
           for (let i = 0; i < data.length; i += 1) {
             that.labels.push(data[i]);
           }
-        }).then(() => {
-          this.loadingLabels = false;
-          if(refresh) {
-            this.labelRefresher();
-          }
-        })
+          that.loadingLabels = false;
+        });
       },
 
       setLabel(label, id) {
         let url = '/label?id=' + id + '&label=' + label;
-        console.log(url)
         invoke('GET', url, [], (data) => {
-          console.log(data);
-        }).then(() => {
-          this.$store.state.item.label[label] = true;
+          this.item.label[label] = true;
         });
       },
 
       unsetLabel(label, id) {
-        return new Promise((resolve) => {
-          let url = '/label?id=' + id + '&label=' + label + '&set=false';
-          console.log(url)
-          invoke('GET', url, [], (data) => {
-            console.log(data);
-          }).then(() => {
-            this.$store.state.item.label[label] = false;
-          });
+        let url = '/label?id=' + id + '&label=' + label + '&set=false';
+        invoke('GET', url, [], (data) => {
+          this.item.label[label] = false;
         });
       },
 
-      async setLabelsMultiple(id, add, remove, chunk=false) {
-        if(!chunk) {
+      setLabelsMultiple(id, add, remove, chunk = false) {
+        if (!chunk) {
           this.loadingLabelsOperation = true;
-          console.log("LOADING")
         }
         for (let i = 0; i < add.length; i += 1) {
           this.setLabel(add[i], id)
@@ -1114,37 +1029,32 @@ Author(s): Jonas Plum
         for (let i = 0; i < remove.length; i += 1) {
           this.unsetLabel(remove[i], id)
         }
-        if(!chunk) {
-          console.log("LOADING FINISHED")
+        if (!chunk) {
           this.loadingLabelsOperation = false;
           this.labelsConfirmation = false;
-          this.getLabels(true);
+          this.getLabels();
         }
       },
 
-      async setLabelsMultipleChunk(items, labels) {
+      setLabelsMultipleChunk(items, labels) {
         this.loadingLabelsOperation = true;
         for (let i = 0; i < items.length; i += 1) {
           this.setLabelsMultiple(items[i].id, labels, [], true)
         }
         this.loadingLabelsOperation = false;
         this.labelsConfirmationMultiple = false;
-        this.getLabels(true);
+        this.getLabels();
       },
 
       filterLabels(label) {
-        console.log(label);
-
-        if(label === this.filteredLabel) {
+        if (label === this.filteredLabel) {
           label = ''
         }
 
-        this.loadingFilteredTable = true;
-        this.$store.commit('setLabelFilter', label);
-        this.$store.dispatch('loadItems').then(() => {
-          this.loadingFilteredTable = false;
-          this.filteredLabel = label;
-        });
+        this.label = label;
+        console.log("li5");
+        this.loadItems();
+        this.filteredLabel = label;
       },
 
       discardAddLabels(multiple) {
@@ -1162,50 +1072,164 @@ Author(s): Jonas Plum
       },
 
       removeFalseLabels(labels) {
-        const filtered = Object.keys(labels).reduce(function (filtered, key) {
+        return Object.keys(labels).reduce(function (filtered, key) {
           if (labels[key] === true) {
             filtered[key] = labels[key];
           }
           return filtered;
         }, {});
-        return filtered;
       },
 
-    },
+      loadItems() {
+        this.loadElementsTable = true;
+        let url = `/items?type=${this.type}`;
+        if (!Vue._.isEmpty(this.filter) && this.filter.type !== '' && !Vue._.isEmpty(this.filter.columns)) {
+          Vue._.forEach(this.filter.columns, (value, column) => {
+            for (let i = 0; i < value.length; i += 1) {
+              url += `&filter[${column}]=${encodeURI(value[i])}`;
+            }
+          });
+        }
+        if (!Vue._.isEmpty(this.sort) && this.sort.type !== '' && !Vue._.isEmpty(this.sort.columns)) {
+          Vue._.forEach(this.sort.columns, (value, column) => {
+            let direction = '';
+            switch (value) {
+              case 'ASC':
+                direction = 'ASC';
+                break;
+              case 'DESC':
+              default:
+                direction = 'DESC';
+            }
+            if (direction !== '') {
+              url += `&sort[${column}]=${direction}`;
+            }
+          });
+        }
+        if (this.label !== '') {
+          url += `&labels=${this.label}`;
+        }
 
-    created() {
-      this.loadingTree = true;
-      this.loadingTable = true;
-      this.loadingLabels = true;
-      invoke('GET', '/tables', [], (tables) => {
-        this.$store.commit('setTables', tables);
-      });
-      this.$store.dispatch('loadItems').then(() => {
-        this.loadingTree = false;
-        this.loadingTable = false;
-        this.loadingLabels = false;
-      })
+        url += `&offset=${this.offset}`;
+        url += `&limit=${this.limit}`;
+
+        let that = this;
+        invoke('GET', url, [], (items) => {
+          that.type = this.type;
+          that.setItems(items.elements);
+          this.loadElementsTable = false;
+          that.itemCount = items.count;
+        });
+      },
+
+      loadDirectories(path, callback) {
+        let slash = '';
+        let url = '';
+
+        switch (this.type) {
+          case 'directory':
+            slash = '/';
+            break;
+          case 'file':
+            slash = '/';
+            break;
+          case 'windows-registry-key':
+            slash = '\\';
+            break;
+          default:
+            callback([]);
+            return
+        }
+
+        if ((this.type === 'windows-registry-key') && (path === '')) {
+          url = `/tree?directory=${path}`;
+        } else {
+          url = `/tree?directory=${path}${slash}`;
+        }
+
+        url += `&type=${this.type}`;
+
+        let that = this;
+        invoke('GET', url, [], (response) => {
+          let directories = [];
+          for (let i = 0; i < response.length; i += 1) {
+            if (response[i].name === '/') {
+              continue
+            }
+            if ((that.type === 'windows-registry-key') && (path === '')) {
+              directories.push(
+                {
+                  path: response[i],
+                  name: response[i],
+                  children: [],
+                },
+              );
+            } else {
+              directories.push(
+                {
+                  path: path + slash + response[i],
+                  name: response[i],
+                  children: [],
+                },
+              );
+            }
+          }
+          callback(directories);
+        });
+      },
+
+      setItems(data) {
+        const calcHeaders = function () {
+          const headers = [];
+          const keys = Vue._.keys(data[0]);
+          for (let i = 0; i < keys.length; i += 1) {
+            if (keys[i] !== "id" && keys[i] !== "type") {
+              headers.push({
+                text: Vue._.startCase(keys[i]),
+                value: keys[i],
+              });
+            }
+          }
+          return headers;
+        };
+
+        if (data.length !== 0 && 'type' in data[0]) {
+          // this.type = data[0].type;
+          if (data[0].type in templates && 'headers' in templates[data[0].type]) {
+            this.headers = templates[this.type].headers;
+          } else {
+            this.headers = calcHeaders();
+          }
+        } else {
+          this.headers = calcHeaders();
+        }
+        this.offset = 0;
+        this.items = data;
+      },
     },
 
     mounted() {
+      this.loadingType = true;
       this.getDirectories();
       this.getLabels();
+      invoke('GET', '/tables', [], (tables) => {
+        this.tables = tables;
+        this.loadingType = false;
+      });
     },
 
     destroyed() {
-      this.$store.commit('setItem', {});
+      this.item = {};
     },
-
   };
-
-
 </script>
 
 <style scoped>
   table tr td {
     cursor: pointer !important;
   }
-  .v-expansion-panel--active>.v-expansion-panel-header {
+
+  .v-expansion-panel--active > .v-expansion-panel-header {
     min-height: 48px;
   }
 </style>

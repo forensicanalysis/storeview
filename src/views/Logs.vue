@@ -30,6 +30,7 @@ Author(s): Jonas Plum
       :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       :items-per-page="25"
       dense
+      :hide-default-footer="logs.length <= 25"
     >
       <template v-slot:body.prepend>
         <tr>
@@ -61,7 +62,6 @@ Author(s): Jonas Plum
     name: 'logs',
     data() {
       return {
-
         timeFilter: '',
         fileFilter: '',
         messageFilter: '',
@@ -105,11 +105,9 @@ Author(s): Jonas Plum
     },
 
     methods: {
-      async loadFiles() {
+      loadFiles() {
         invoke('GET', '/logs', [], (data) => {
-          console.log(data);
           this.logs = data.elements;
-        }).then(() => {
           this.loading = false;
         });
       },
@@ -129,7 +127,6 @@ Author(s): Jonas Plum
       },
 
       searchFilter() {
-
         let column = '';
 
         for (const key in this.itemscol) {
@@ -158,14 +155,3 @@ Author(s): Jonas Plum
     },
   };
 </script>
-<style lang="sass">
-  @import '~vuetify/src/styles/styles.sass'
-  @import '../styles/colors.scss'
-  @import '../styles/animations.scss'
-  @import '~animate.css'
-
-  .filterIcon
-    &:hover
-      color: $c-shadow !important
-      cursor: pointer
-</style>

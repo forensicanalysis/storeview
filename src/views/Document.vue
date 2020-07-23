@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div>
+  <div id="item">
     <div style="padding: 2px !important;"
          v-if="content.label && !_.isEmpty(removeFalseLabels(content.label))">
       <v-chip-group
@@ -180,9 +180,13 @@ Author(s): Jonas Plum
     }
   };
 </script>
-<style lang="sass">
-  .v-slide-group__next, .v-slide-group__prev
-    -ms-flex: 0 1 28px !important
-    flex: 0 1 28px !important
-    min-width: 28px !important
+<style>
+  .v-slide-group__next, .v-slide-group__prev {
+    -ms-flex: 0 1 28px !important;
+    flex: 0 1 28px !important;
+    min-width: 28px !important;
+  }
+  #item {
+    user-select: auto;
+  }
 </style>

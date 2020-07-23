@@ -27,9 +27,10 @@ Author(s): Jonas Plum
       :items="errors"
       :loading="loading"
       :fixed-header="true"
-      :footer-props="{'items-per-page-options': [10, 25, 50, 1000]}"
+      :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       :items-per-page="25"
       dense
+      :hide-default-footer="errors.length <= 25"
     >
       <template v-slot:item.title="{ item }">
         <div>{{ title(item) }}</div>
@@ -43,6 +44,7 @@ Author(s): Jonas Plum
 
 <script>
   import {invoke} from "../store/invoke";
+  import {templates} from '../store/templates';
 
   export default {
     name: 'errors',
@@ -50,10 +52,8 @@ Author(s): Jonas Plum
       return {
         loading: true,
         headers: [
-          // {text: "ID", value: "id"},
           {text: "Title", value: "title"},
           {text: "Type", value: "type"},
-          // {text: "Description", value: "description"},
           {text: "Errors", value: "errors"},
         ],
         errors: [],
@@ -61,18 +61,16 @@ Author(s): Jonas Plum
     },
 
     methods: {
-      async loadFiles() {
-
+      loadFiles() {
         invoke('GET', '/errors', [], (data) => {
           this.errors = data.elements;
-        }).then(() => {
           this.loading = false;
         });
       },
 
       title(element) {
-        if (_.has(this.$store.state.templates, element['type'])) {
-          return element[this.$store.state.templates[element['type']].headers[0].value]
+        if (_.has(templates, element['type'])) {
+          return element[templates[element['type']].headers[0].value]
         }
         if (_.has(element, 'name')) {
           return element['name'];

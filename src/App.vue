@@ -119,7 +119,7 @@ Author(s): Jonas Plum, Kadir Aslan
     font-weight: 400 !important;
   }
 
-  .theme--light.v-tabs.main-bar>.v-tabs-bar {
+  .theme--light.v-tabs.main-bar > .v-tabs-bar {
     background-color: #e8e8e8;
   }
 

@@ -56,7 +56,7 @@ Author(s): Jonas Plum
         <v-icon
           v-if="!item.dir"
           small
-          @click="editItem(item)"
+          @click="download(item)"
         >
           mdi-download
         </v-icon>
@@ -81,8 +81,7 @@ Author(s): Jonas Plum
           {text: "Size", value: "size"},
           {text: "Download", value: "actions", sortable: false},
         ],
-        files: [],
-        data: null
+        files: []
       };
     },
 
@@ -121,27 +120,14 @@ Author(s): Jonas Plum
         }
         this.breadcrumbs = breadcrumbs;
         invoke('GET', '/files?path=' + path, [], (data) => {
-          console.log(data);
           this.files = data.elements;
         });
       },
 
-      editItem(item) {
-          const that = this;
-          this.$http.get(`http://localhost:8081/api/file?path=${item.path}`)
-          .then((response) => {
-            const blob = new Blob([response.data])
-            const link = document.createElement('a')
-            link.href = URL.createObjectURL(blob)
-            link.download = item.name
-            link.click()
-            URL.revokeObjectURL(link.href)
-            console.log(response)
-            that.data = response.data;
-          }).catch(console.error);
-          console.log(item)
-          console.log(that.data)
-          return item
+      download(item) {
+          invoke('GET', '/file?path=' + item.path, [], (data) => {
+            // TODO: download
+          });
       },
     },
 
@@ -151,7 +137,6 @@ Author(s): Jonas Plum
   };
 </script>
 <style lang="sass">
-
   @import '~vuetify/src/styles/styles.sass'
   @import '../styles/colors.scss'
   @import '../styles/animations.scss'

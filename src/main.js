@@ -27,8 +27,7 @@ import vuetify from './plugins/vuetify';
 
 
 import App from './App.vue';
-
-import './registerServiceWorker';
+// import './registerServiceWorker';
 import router from './router';
 import store from './store';
 
@@ -36,16 +35,21 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'roboto-fontface/css/roboto-slab/roboto-slab-fontface.css';
 import '@mdi/font/css/materialdesignicons.css';
 
-
 Vue.use(VueAxios, axios);
 Vue.use(VueLodash);
 
-
 Vue.config.productionTip = false;
 
-new Vue({
+let v = new Vue({
   router,
   store,
   vuetify,
   render: h => h(App),
-}).$mount('#app');
+});
+if (window && window.process && window.process.type) {
+  document.addEventListener('astilectron-ready', function () {
+    v.$mount('#app');
+  });
+} else {
+  v.$mount('#app');
+}

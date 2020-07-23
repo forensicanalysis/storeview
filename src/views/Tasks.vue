@@ -22,16 +22,16 @@ Author(s): Jonas Plum
 -->
 <template>
   <v-container class="task scrollableArea" fluid>
-    <v-row class="pt-3" v-for="(task, name) in tasks" :key="name">
+    <v-row dense class="" v-for="(task, id) in tasks" :key="id">
       <v-col cols="2" class="py-0">
         <v-checkbox
-          v-model="active[name]"
-          :label="name"
+          v-model="active[task.Name]"
+          :label="task.Description"
         />
       </v-col>
-      <v-col class="py-0">
-        <v-form ref="form" v-model="valids[name]">
-          <v-jsf v-model="models[name]" :schema="cleanSchema(task)" :options="options"/>
+      <v-col v-if="active[task.Name]" class="py-0">
+        <v-form ref="form" v-model="valids[task.Name]">
+          <v-jsf v-model="models[task.Name]" :schema="cleanSchema(task.Schema)" :options="options"/>
         </v-form>
       </v-col>
     </v-row>
@@ -84,9 +84,9 @@ Author(s): Jonas Plum
 
       run() {
         let that = this;
-        that._.forEach(this.tasks, function (task, name) {
-            if (that.active[name]) {
-              invoke('POST', '/run?name=' + name, that.models[name], (result) => {
+        that._.forEach(this.tasks, function (task, id) {
+            if (that.active[task.Name]) {
+              invoke('POST', '/run?name=' + task.Name, that.models[task.Name], (result) => {
                 console.log(result);
               });
             }
@@ -103,7 +103,8 @@ Author(s): Jonas Plum
 
 <style>
   .task > .row {
-    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    /* border-top: 1px solid rgba(0, 0, 0, 0.12); */
+    height: 30px;
   }
 
   .task .vjsf-property .row {
@@ -112,9 +113,9 @@ Author(s): Jonas Plum
   }
 
   .task .col-2 label {
-    font-weight: bold;
+    /* font-weight: bold; */
     color: #333;
-    font-size: 1rem;
+    font-size: 0.8rem;
   }
 
   .task .v-input--checkbox {

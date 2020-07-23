@@ -67,7 +67,7 @@ func open(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, er
 func handleStoreMessages(store string) func(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	return func(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 		log.Println("using store", store)
-		router := cobraserver.Router(commands.Commands, []string{store})
+		router := cobraserver.Router(commands.Commands, func() []string { return []string{store} })
 
 		u, err := url.Parse("/api" + m.Name)
 		if err != nil {

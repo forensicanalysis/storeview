@@ -67,6 +67,7 @@ func menuItems() []*astilectron.MenuItemOptions {
 				{Role: astilectron.MenuItemRoleHide, Label: astikit.StrPtr("Hide " + AppName)},
 				{Role: astilectron.MenuItemRoleHideOthers},
 				{Role: astilectron.MenuItemRoleUnhide},
+				{Role: astilectron.MenuItemRoleReload},
 				{Type: astilectron.MenuItemTypeSeparator},
 				{Role: astilectron.MenuItemRoleQuit, Label: astikit.StrPtr("Quit " + AppName)},
 				{
@@ -200,6 +201,8 @@ func storeWindow(store string) error {
 		startupWindow.Hide()
 	}
 	windowCount++
+
+	defer window.OpenDevTools()
 
 	return window.Create()
 }
