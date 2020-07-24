@@ -53,11 +53,33 @@ let main = {
       console.log(err)
     })
   },
+  image: function () {
+    // Create message
+    let message = {"name": "image"};
+
+    dialog.showOpenDialog().then(result => {
+      if (!result.canceled) {
+        message.payload = result.filePaths[0];
+
+        astilectron.sendMessage(message, function (message) {
+          // Check error
+          if (message.name === "error") {
+            return
+          }
+        })
+      }
+    }).catch(err => {
+      console.log(err)
+    })
+  },
   listen: function () {
     astilectron.onMessage(function (message) {
       switch (message.name) {
         case "menu-open":
           main.open();
+          break;
+        case "menu-image":
+          main.image();
           break;
         case "menu-new":
           main.new();

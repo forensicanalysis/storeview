@@ -18,3 +18,6 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2
 )
+
+replace github.com/forensicanalysis/forensicstore => ../forensicstore
+replace github.com/forensicanalysis/forensicworkflows => ../forensicworkflows

@@ -34,7 +34,8 @@ import {
   VSelect,
   VTextarea,
   VCheckbox,
-  VTextField
+  VTextField,
+  VFileInput
 } from 'vuetify/lib'
 
 Vue.component('v-tooltip', VTooltip);
@@ -47,6 +48,7 @@ Vue.component('v-select', VSelect);
 Vue.component('v-text-field', VTextField);
 Vue.component('v-textarea', VTextarea);
 Vue.component('v-checkbox', VCheckbox);
+Vue.component('v-file-input', VFileInput);
 
 Vue.use(Vuetify);
 

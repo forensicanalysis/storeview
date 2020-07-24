@@ -21,22 +21,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div class="scrollableArea">
     <v-data-table
       :headers="headers"
       :items="logs"
       :loading="loading"
       :fixed-header="true"
-      :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-      :items-per-page="25"
+      :footer-props="{'items-per-page-options': [25, 50, 100, 200]}"
+      :items-per-page="100"
       dense
-      :hide-default-footer="logs.length <= 25"
+      :hide-default-footer="logs.length <= 100"
     >
       <template v-slot:body.prepend>
-        <tr>
+        <tr id="filter">
           <td v-for="h in headers"
               :key="h.text" role="columnheader"
-              scope="col">
+              scope="col" style="">
             <v-text-field
               v-model="itemscol[h.value]"
               @keyup.enter.native="searchFilter"
@@ -51,7 +50,6 @@ Author(s): Jonas Plum
         <div>{{ toLocal(item.time) }}</div>
       </template>
     </v-data-table>
-  </div>
 </template>
 
 <script>
@@ -155,3 +153,15 @@ Author(s): Jonas Plum
     },
   };
 </script>
+<style>
+  .v-data-table {
+    flex-grow: 1;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    height: 100%;
+  }
+  .v-data-table__wrapper {
+    overflow: auto !important;
+  }
+</style>

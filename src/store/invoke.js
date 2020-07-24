@@ -23,7 +23,7 @@ import axios from 'axios';
 
 export function invoke(method, url, arg, callback) {
   if (window.astilectron !== undefined) {
-    window.astilectron.sendMessage({"name": url, "payload": arg}, function (message) {
+    window.astilectron.sendMessage({"name": url, "payload": arg, "method": method}, function (message) {
       console.log(message);
       if (message.payload !== undefined) {
         callback(message.payload);

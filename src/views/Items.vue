@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div class="d-flex flex-row" style="overflow: hidden">
+  <div class="d-flex flex-row" style="overflow: hidden; height: 100%;">
     <div
       ref="drawerLeft"
       class="flex-grow-0 flex-shrink-0 verticalbar scrollableArea"
@@ -47,12 +47,11 @@ Author(s): Jonas Plum
               <hr class="divider"/>
               <div v-if="loadingType">
                 <v-spacer/>
-                <looping-rhombuses-spinner
-                  style="margin: 0 auto; padding: 20px"
-                  :animation-duration="2500"
-                  :rhombus-size="15"
+                <v-progress-linear
+                  indeterminate
                   color="#EF5350"
-                />
+                  :height="2"
+                ></v-progress-linear>
               </div>
               <v-list-item-group v-else v-model="itemTypeIndex" color="primary">
                 <v-list-item @click="loadType('')">
@@ -104,12 +103,11 @@ Author(s): Jonas Plum
                 <hr class="divider"/>
                 <div v-if="loadingTree">
                   <v-spacer/>
-                  <looping-rhombuses-spinner
-                    style="margin: 0 auto; padding: 20px"
-                    :animation-duration="2500"
-                    :rhombus-size="15"
+                  <v-progress-linear
+                    indeterminate
                     color="#EF5350"
-                  />
+                    :height="2"
+                  ></v-progress-linear>
                 </div>
                 <div v-else>
                   <transition name="fade-slow" mode="out-in">
@@ -150,7 +148,7 @@ Author(s): Jonas Plum
             </v-list>
           </v-expansion-panel-content>
         </v-expansion-panel>
-        <v-expansion-panel>
+        <!--<v-expansion-panel>
           <v-expansion-panel-header>
             <v-subheader class="navigationHeader tr-2">
               <transition name="fade-fast">
@@ -168,12 +166,11 @@ Author(s): Jonas Plum
                 <hr class="divider"/>
                 <div v-if="loadingLabels">
                   <v-spacer/>
-                  <looping-rhombuses-spinner
-                    style="margin: 0 auto; padding: 20px"
-                    :animation-duration="2500"
-                    :rhombus-size="15"
+                  <v-progress-linear
+                    indeterminate
                     color="#EF5350"
-                  />
+                    :height="2"
+                  ></v-progress-linear>
                 </div>
                 <div v-else style="margin-top: 10px; margin-left: 10px">
                   <transition name="fade-slow" mode="out-in">
@@ -182,6 +179,8 @@ Author(s): Jonas Plum
                               style="margin-left: 6px">
                         mdi-dots-horizontal
                       </v-icon>
+                    </div>
+                    <div v-if="!leftExtended">
                     </div>
                     <div v-else key="labels">
                       <v-chip-group
@@ -193,7 +192,7 @@ Author(s): Jonas Plum
                           class="ma-2 lighten-3 navigationChip"
                           color="grey"
                           text-color="#424242"
-                          v-for="label in removeDuplicates(labels)"
+                          v-for="label in labels"
                           :key="label"
                           :value="label"
                           small
@@ -216,7 +215,7 @@ Author(s): Jonas Plum
               </v-list-item-group>
             </v-list>
           </v-expansion-panel-content>
-        </v-expansion-panel>
+        </v-expansion-panel>-->
       </v-expansion-panels>
       <v-divider/>
       <div class="d-flex justify-end">
@@ -228,8 +227,8 @@ Author(s): Jonas Plum
       </div>
     </div>
     <div class="flex-grow-1 d-flex flex-row" style="width: 100%; overflow: hidden">
-      <div style="overflow-x: hidden; transition: width 0.2s ease-in; min-height: 88vh;"
-           class="pt-3 flex-shrink-1 flex-grow-1 scrollableArea"
+      <div style="overflow: hidden; transition: width 0.2s ease-in; display: flex; flex-direction: column;"
+           class="pt-3 flex-shrink-1 flex-grow-1"
       >
         <v-bottom-sheet v-model="bottomSheet"
                         inset
@@ -270,11 +269,10 @@ Author(s): Jonas Plum
           @update:options="updateopt"
           :fixed-header="true"
           @click:row="select"
-          :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
-          :items-per-page="25"
-          :hide-default-footer="itemCount <= 25"
+          :footer-props="{'items-per-page-options': [25, 50, 100, 200, 500]}"
+          :items-per-page="100"
+          :hide-default-footer="itemCount <= 100"
           show-select
-          style="overflow: visible !important;"
           dense
         >
           <template v-slot:body.prepend>
@@ -435,7 +433,6 @@ Author(s): Jonas Plum
               LABELS
             </v-card-title>
             <hr class="divider" style="margin: 0 !important"/>
-
             <div
               style="padding: 2px 14px !important; max-height: 40px !important; min-height: 40px !important; background: whitesmoke">
               <v-chip-group
@@ -451,13 +448,6 @@ Author(s): Jonas Plum
                         filter-icon="mdi-close"
                         style="margin: 2px !important"
                         v-for="label in existingLabels" :key="label">
-                  <!--                  <v-avatar-->
-                  <!--                    left-->
-                  <!--                    class="grey lighten-2"-->
-                  <!--                    style="margin-left: -33px !important; color: #424242"-->
-                  <!--                  >-->
-                  <!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
-                  <!--                  </v-avatar>-->
                   {{ label }}
                 </v-chip>
                 <p class="noLabelsText"
@@ -471,13 +461,6 @@ Author(s): Jonas Plum
                         filter-icon="mdi-close"
                         style="margin: 2px !important"
                         v-for="label in labelsToAdd" :key="label">
-                  <!--                  <v-avatar-->
-                  <!--                    left-->
-                  <!--                    class="grey lighten-2"-->
-                  <!--                    style="margin-left: -33px !important; color: #424242"-->
-                  <!--                  >-->
-                  <!--                    <v-icon small color="#EF5350">mdi-close</v-icon>-->
-                  <!--                  </v-avatar>-->
                   {{ label }}
                 </v-chip>
               </v-chip-group>
@@ -617,7 +600,7 @@ Author(s): Jonas Plum
           </v-toolbar-items>
         </v-toolbar>
         <v-divider class="mx-0"/>
-        <item :content="item"/>
+        <item :content="item" :labels="labels"/>
       </div>
     </div>
   </div>
@@ -626,7 +609,6 @@ Author(s): Jonas Plum
 <script>
   import {DateTime} from 'luxon';
   import item from '@/views/Document.vue';
-  import {LoopingRhombusesSpinner} from 'epic-spinners'
   import {invoke} from "../store/invoke";
   import {templates} from "../store/templates";
   import Vue from "vue";
@@ -636,7 +618,6 @@ Author(s): Jonas Plum
     name: 'items',
 
     components: {
-      LoopingRhombusesSpinner,
       item,
     },
 
@@ -984,42 +965,30 @@ Author(s): Jonas Plum
         return arr.reduce((a, v) => (v === val ? a + 1 : a), 0);
       },
 
-      removeDuplicates(arr) {
-        const filtered = (arr) => arr.filter((v, i) => arr.indexOf(v) === i)
-        return filtered(arr);
-      },
-
       removeExistingLabels(arr) {
         return this.labels.filter((elements) => !arr.includes(elements));
       },
 
       getLabels() {
+        return
         this.loadingLabels = true;
         const that = this;
-        this.labels = [];
         invoke('GET', '/labels', [], (data) => {
-          for (let i = 0; i < data.length; i += 1) {
-            that.labels.push(data[i]);
-          }
+          that.labels = data;
           that.loadingLabels = false;
         });
       },
 
-      setLabel(label, id) {
-        let url = '/label?id=' + id + '&label=' + label;
+      setLabels(labels, id) {
+        let url = '/label?id=' + id + '&label=' + labels;
         invoke('GET', url, [], (data) => {
-          this.item.label[label] = true;
+          this.item.labels = labels;
         });
       },
 
-      unsetLabel(label, id) {
-        let url = '/label?id=' + id + '&label=' + label + '&set=false';
-        invoke('GET', url, [], (data) => {
-          this.item.label[label] = false;
-        });
-      },
 
       setLabelsMultiple(id, add, remove, chunk = false) {
+        return
         if (!chunk) {
           this.loadingLabelsOperation = true;
         }
@@ -1037,6 +1006,7 @@ Author(s): Jonas Plum
       },
 
       setLabelsMultipleChunk(items, labels) {
+        return
         this.loadingLabelsOperation = true;
         for (let i = 0; i < items.length; i += 1) {
           this.setLabelsMultiple(items[i].id, labels, [], true)
@@ -1211,7 +1181,7 @@ Author(s): Jonas Plum
     mounted() {
       this.loadingType = true;
       this.getDirectories();
-      this.getLabels();
+      // this.getLabels();
       invoke('GET', '/tables', [], (tables) => {
         this.tables = tables;
         this.loadingType = false;

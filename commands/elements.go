@@ -266,8 +266,7 @@ func Label() *cobraserver.Command {
 		Method: http.MethodGet,
 		SetupFlags: func(f *pflag.FlagSet) {
 			f.String("id", "", "id")
-			f.String("label", "", "label")
-			f.String("set", "true", "set")
+			f.StringArray("label", nil, "label")
 		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			storeName := flags.Args()[0]
@@ -282,22 +281,22 @@ func Label() *cobraserver.Command {
 				return err
 			}
 
-			label, err := flags.GetString("label")
-			if err != nil {
-				return err
-			}
-
-			set, err := flags.GetString("set")
+			labels, err := flags.GetStringArray("label")
 			if err != nil {
 				return err
 			}
 
 			conn := store.Connection()
 
+			b, err := json.Marshal(labels)
+			if err != nil {
+				return err
+			}
+
 			stmt, err := conn.Prepare(fmt.Sprintf(
 				"UPDATE elements "+
-					"SET json = json_patch(json,'{\"label\": {\"%s\": %s}}') "+
-					"WHERE id = $id", label, set,
+					"SET json = json_patch(json,'{\"labels\": %s}') "+
+					"WHERE id = $id", string(b),
 			))
 			if err != nil {
 				return err
@@ -335,9 +334,9 @@ func Labels() *cobraserver.Command {
 
 			conn := store.Connection()
 
-			q := "SELECT json_extract(json, '$.label') AS labels " +
+			q := "SELECT json_extract(json, '$.labels') AS labels " +
 				"FROM elements " +
-				"WHERE json_extract(json, '$.label') != ''"
+				"WHERE json_extract(json, '$.labels') != ''"
 			fmt.Println(q)
 
 			stmt, err := conn.Prepare(q)
@@ -345,7 +344,8 @@ func Labels() *cobraserver.Command {
 				return err
 			}
 
-			var labels []string
+			seen := map[string]bool{}
+			labels := []string{}
 
 			for {
 				if hasRow, err := stmt.Step(); err != nil {
@@ -354,16 +354,17 @@ func Labels() *cobraserver.Command {
 					break
 				}
 
-				elabels := map[string]bool{}
+				var elabels []string
 				label := stmt.GetText("labels")
 				err = json.Unmarshal([]byte(label), &elabels)
 				if err != nil {
 					return err
 				}
 
-				for label, valid := range elabels {
-					if valid {
-						labels = append(labels, label)
+				for _, elabel := range elabels {
+					if _, ok := seen[elabel]; !ok {
+						labels = append(labels, elabel)
+						seen[elabel] = true
 					}
 				}
 			}
@@ -461,7 +462,7 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 
 	if len(options.Labels) > 0 {
 		for _, label := range options.Labels {
-			filters = append(filters, fmt.Sprintf("json_extract(json, '$.label.%s')", label))
+			filters = append(filters, fmt.Sprintf("json_extract(json, '$.labels.%s')", label))
 		}
 	}
 

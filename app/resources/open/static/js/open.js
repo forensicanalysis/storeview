@@ -8,7 +8,6 @@ let open = {
     document.getElementById("menu").appendChild(openButton);
 
     let newButton = document.createElement("button");
-    newButton.className = "inactive";
     newButton.onclick = function () {
       main.new()
     };
@@ -16,8 +15,9 @@ let open = {
     document.getElementById("menu").appendChild(newButton);
 
     let imageButton = document.createElement("button");
-    imageButton.className = "inactive";
-    // button.onclick = function() { index.explore() };
+    imageButton.onclick = function() {
+      main.image()
+    };
     imageButton.innerHTML = `<i class="fa fa-hdd-o"></i><span>Import disk image</span>`;
     document.getElementById("menu").appendChild(imageButton);
   },

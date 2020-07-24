@@ -21,7 +21,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Author(s): Jonas Plum
 -->
 <template>
-  <div class="scrollableArea">
+  <div style="height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;">
     <v-breadcrumbs :items="breadcrumbs">
       <v-breadcrumbs-item
         slot="item"
@@ -38,7 +41,7 @@ Author(s): Jonas Plum
       :fixed-header="true"
       :footer-props="{'items-per-page-options': [10, 25, 50, 100]}"
       :items-per-page="25"
-      style="overflow: visible !important;"
+      :hide-default-footer="files.length <= 25"
       dense
     >
       <template v-slot:item.name="{ item }">
@@ -62,6 +65,15 @@ Author(s): Jonas Plum
         </v-icon>
       </template>
     </v-data-table>
+    <v-overlay
+      :absolute="true"
+      :opacity="0.5"
+      :value="overlay"
+      style="text-align: center"
+    >
+      <p>Saving file</p>
+      <v-progress-circular indeterminate size="64"></v-progress-circular>
+    </v-overlay>
   </div>
 </template>
 
@@ -73,6 +85,7 @@ Author(s): Jonas Plum
     name: 'files',
     data() {
       return {
+        overlay: false,
         breadcrumbs: [{text: '/', path: '/', link: true}],
         headers: [
           {text: "Name", value: "name"},
@@ -125,9 +138,34 @@ Author(s): Jonas Plum
       },
 
       download(item) {
-          invoke('GET', '/file?path=' + item.path, [], (data) => {
-            // TODO: download
-          });
+        const that = this;
+        if ('electron' in window) { // electron check
+          window.electron.showSaveDialog({defaultPath: item.path.split('/').reverse()[0]}).then(result => {
+            that.overlay = true;
+            if (!result.canceled) {
+              window.astilectron.sendMessage({
+                "name": "save",
+                "payload": {"src": item.path, "dest": result.filePath}
+              }, function (message) {
+                that.overlay = false;
+              });
+            }
+          }).catch(err => {
+            console.log(err)
+          })
+          return
+        }
+
+        this.$http.get("/api/file?path=" + item.path).then((response) => {
+          const blob = new Blob([response.data])
+          const link = document.createElement('a')
+          link.href = URL.createObjectURL(blob)
+          link.download = item.name
+          link.click()
+          URL.revokeObjectURL(link.href)
+          console.log(response)
+          that.data = response.data;
+        }).catch(console.error);
       },
     },
 
@@ -136,14 +174,14 @@ Author(s): Jonas Plum
     },
   };
 </script>
-<style lang="sass">
-  @import '~vuetify/src/styles/styles.sass'
-  @import '../styles/colors.scss'
-  @import '../styles/animations.scss'
-  @import '~animate.css'
+<style lang="scss">
+  @import '~vuetify/src/styles/styles.sass';
+  @import '../styles/colors.scss';
+  @import '../styles/animations.scss';
+  @import '~animate.css';
 
-  .breadcrumbsHover
-    &:hover
-      color: $c-pink !important
-      cursor: pointer
+  .breadcrumbsHover:hover {
+    color: $c-pink;
+    cursor: pointer;
+  }
 </style>

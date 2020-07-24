@@ -22,30 +22,29 @@ Author(s): Jonas Plum
 -->
 <template>
   <div id="item">
-    <div style="padding: 2px !important;"
-         v-if="content.label && !_.isEmpty(removeFalseLabels(content.label))">
-      <v-chip-group
-        center-active
-        show-arrows
-        v-show="$store.state.refreshDetails"
-      >
-        <v-chip class="lighten-3"
-                color="grey"
-                text-color="#EF5350"
-                small
-                style="margin: 2px !important"
-                v-for="label in Object.keys(removeFalseLabels(content.label))" :key="label">
-          <v-avatar
-            left
-            class="grey lighten-2"
-            style="margin-left: -33px !important; color: #424242"
-          >
-          </v-avatar>
-          {{ label }}
+    <!--<v-combobox
+      v-model="selected"
+      :items="labels"
+      small-chips
+      label="Labels"
+      multiple
+      solo
+      flat
+      hide-details
+      @change="changeLabels"
+    >
+      <template v-slot:selection="{ attrs, item, parent, selected }">
+        <v-chip
+          v-bind="attrs"
+          :input-value="selected"
+          close
+          @click:close="parent.selectItem(item)"
+        >
+          <strong>{{ item }}</strong>
         </v-chip>
-      </v-chip-group>
-    </div>
-    <v-divider/>
+      </template>
+    </v-combobox>
+    <v-divider/>-->
     <v-tabs show-arrows small v-model="tab">
       <v-tabs-slider/>
       <v-tab v-for="view in views" :key="view['title']" :href="'#tab-'+_.lowerCase(view['title'])">
@@ -70,7 +69,7 @@ Author(s): Jonas Plum
           <pre>{{data}}</pre>
         </v-card>
       </v-tab-item>
-      <v-tab-item :value="'tab-pdf'" style="overflow: auto">
+      <!--<v-tab-item :value="'tab-pdf'" style="overflow: auto">
         <pdf
           ref="pdf"
           :src="data"
@@ -87,24 +86,26 @@ Author(s): Jonas Plum
                style="width: 100%"/>
         </v-card>
       </v-tab-item>
-    </v-tabs-items>
+    </v-tabs-items>-->
   </div>
 </template>
 
 <script>
-  import pdf from 'vue-pdf';
+  // import pdf from 'vue-pdf';
   import {component as VueCodeHighlight} from 'vue-code-highlight';
   import JsonToHtml from '@/components/json-to-html.vue';
+  import {invoke} from "../store/invoke";
 
   export default {
     name: 'item',
     components: {
       JsonToHtml,
-      pdf,
+      // pdf,
       VueCodeHighlight,
     },
     data() {
       return {
+        selected: [],
         tab: null,
         data: '',
         active: 'Info',
@@ -125,6 +126,13 @@ Author(s): Jonas Plum
     },
     watch: {
       content() {
+        if ('labels' in this.content) {
+          this.selected = this.content.labels;
+        } else {
+          this.selected = [];
+        }
+
+        /*
         if ('export_path' in this.content && this._.endsWith(this.content.export_path, '.pdf')) {
           this.views = this._.filter(this.views, o => o.title !== 'PDF');
           this.views.push({
@@ -144,6 +152,7 @@ Author(s): Jonas Plum
         } else {
           this.views = this._.filter(this.views, o => o.title !== 'Image');
         }
+        */
 
         if ('export_path' in this.content && this.content.size < 5 * 1000 * 1000) {
           this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
@@ -152,10 +161,10 @@ Author(s): Jonas Plum
             icon: 'file-document-outline',
           });
           const that = this;
-          this.$http.get(`http://localhost:8081/api/file?path=${this.content.export_path}`)
-            .then((response) => {
-              that.data = response.data;
-            });
+
+          invoke('GET', '/file?path=' + this.content.export_path, [], (data) => {
+            that.data = new Buffer(data, 'base64').toString('ascii');
+          });
         } else {
           this.views = this._.filter(this.views, o => o.title !== 'Hex' && o.title !== 'Text');
         }
@@ -166,17 +175,17 @@ Author(s): Jonas Plum
         type: Object,
         required: true,
       },
+      labels: {
+        type: Array,
+        required: false,
+      },
     },
     methods: {
-      removeFalseLabels(labels) {
-        const filtered = Object.keys(labels).reduce(function (filtered, key) {
-          if (labels[key] === true) {
-            filtered[key] = labels[key];
-          }
-          return filtered;
-        }, {});
-        return filtered;
-      }
+      changeLabels(labels) {
+        let url = '/label?id=' + this.content.id + '&label=' + labels;
+        invoke('GET', url, [], () => {
+        });
+      },
     }
   };
 </script>
@@ -186,6 +195,7 @@ Author(s): Jonas Plum
     flex: 0 1 28px !important;
     min-width: 28px !important;
   }
+
   #item {
     user-select: auto;
   }

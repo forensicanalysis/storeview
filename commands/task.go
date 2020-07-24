@@ -29,6 +29,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -56,6 +57,14 @@ func ListTasks() *cobraserver.Command {
 			commands := runCmd.Commands()
 			var children []Task
 			for _, command := range commands {
+				if command.Annotations != nil {
+					if properties, ok := command.Annotations["plugin_property_flags"]; ok {
+						if strings.Contains(properties, "ex") {
+							continue
+						}
+					}
+				}
+
 				schema := flagsToSchema(command.Flags())
 				children = append(children, Task{
 					Name:        command.Name(),

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/asticode/go-astikit"
@@ -176,6 +177,9 @@ func storeWindow(store string) error {
 		Height:        astikit.IntPtr(800),
 		Width:         astikit.IntPtr(1024),
 		TitleBarStyle: astilectron.TitleBarStyleHiddenInset,
+		WebPreferences: &astilectron.WebPreferences{
+			Preload: astikit.StrPtr(filepath.Join(app.Paths().DataDirectory(), "resources", "app", "static", "js", "preload.js")),
+		},
 	}
 
 	window, err := app.NewWindow(url, o)
@@ -207,10 +211,18 @@ func storeWindow(store string) error {
 	return window.Create()
 }
 
-func handleMessages(w *astilectron.Window, messageHandler bootstrap.MessageHandler, l astikit.SeverityLogger) astilectron.ListenerMessage {
+type MessageIn struct {
+	Name    string          `json:"name"`
+	Payload json.RawMessage `json:"payload,omitempty"`
+	Method  string          `json:"method,omitempty"`
+}
+
+type MessageHandler func(w *astilectron.Window, m MessageIn) (payload interface{}, err error)
+
+func handleMessages(w *astilectron.Window, messageHandler MessageHandler, l astikit.SeverityLogger) astilectron.ListenerMessage {
 	return func(m *astilectron.EventMessage) (v interface{}) {
 		// Unmarshal message
-		var i bootstrap.MessageIn
+		var i MessageIn
 		var err error
 		if err = m.Unmarshal(&i); err != nil {
 			l.Error(fmt.Errorf("unmarshaling message %+v failed: %w", *m, err))

@@ -261,5 +261,22 @@ export const templates = {
       },
     ],
   },
-
+  'prefetch': {
+    icon: 'reload',
+    headers: [
+      {
+        text: 'Executable',
+        value: 'Executable',
+        align: 'left',
+      }, {
+        text: 'Last Run Times',
+        value: 'LastRunTimes',
+        align: 'left',
+      }, {
+        text: 'RunCount',
+        value: 'RunCount',
+        align: 'right',
+      }
+    ],
+  },
 };
