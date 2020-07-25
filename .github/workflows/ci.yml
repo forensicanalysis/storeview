@@ -84,7 +84,9 @@ jobs:
       - name: Install astilectron-bundler
         run: go get -u github.com/asticode/go-astilectron-bundler/...
 
-      - run: yarn build
+      - run: |
+          yarn install
+          yarn build
       - run: astilectron-bundler
         working-directory: app
 
