@@ -59,7 +59,7 @@ jobs:
 #        shell: bash
 
   build:
-    name: build
+    name: Build elementary-ui
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
