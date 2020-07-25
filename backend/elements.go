@@ -232,7 +232,7 @@ func ListTables() *cobraserver.Command {
 
 			q := "SELECT " +
 				"json_extract(json, '$.type') as type, " +
-				"count(json) as count " +
+				"count(*) as count " +
 				"FROM elements " +
 				"GROUP BY json_extract(json, '$.type')"
 			fmt.Println(q)
@@ -482,7 +482,7 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 		}
 	}
 
-	countQuery := "SELECT count(json) as count FROM elements" + q
+	countQuery := "SELECT count(*) as count FROM elements" + q
 
 	var count int64
 	countCached, found := queryCache.Get(countQuery)
