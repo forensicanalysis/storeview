@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  unittests:
-    name: Go Unittests
+  lint:
+    name: Go Lint
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
