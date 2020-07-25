@@ -31,8 +31,8 @@ import (
 	"github.com/forensicanalysis/storeview/commands"
 )
 
-//go:generate yarn install
-//go:generate yarn build
+//go:generate make install
+//go:generate make build
 //go:generate go get -u github.com/markbates/pkger/cmd/pkger
 //go:generate pkger -o assets
 

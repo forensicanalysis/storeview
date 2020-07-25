@@ -81,30 +81,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Install astilectron-bundler
-        run: go get -u github.com/asticode/go-astilectron-bundler/...
-
-      - run: |
-          yarn install
-          yarn build
-          sed -i '' 's_=/_=_g' dist/index.html
-          rm -rf app/resources/app
-          mv dist app/resources/app
-          cp -r app/resources/open/* app/resources/app
-      - run: astilectron-bundler
-        working-directory: app
-        if: matrix.os == 'macos-latest'
-
-      - run: |
-          yarn install
-          yarn build
-          sed -i 's_=/_=_g' dist/index.html
-          rm -rf app/resources/app
-          mv dist app/resources/app
-          cp -r app/resources/open/* app/resources/app
-      - run: astilectron-bundler
-        working-directory: app
-        if: matrix.os != 'macos-latest'
+      - run: make install
+      - run: make build
 
       - name: Upload elementary-ui
         uses: actions/upload-artifact@master
