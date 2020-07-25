@@ -1,4 +1,4 @@
-package commands
+package backend
 
 import "github.com/forensicanalysis/storeview/cobraserver"
 

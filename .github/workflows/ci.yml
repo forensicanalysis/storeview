@@ -39,10 +39,10 @@ jobs:
       - run: make build
 
       - name: Lint
-        run: golangci-lint run --verbose --config test/.golangci.yml --enable gofmt --enable goimports
+        run: golangci-lint run --verbose --config test/.golangci.yml --enable gofmt --enable goimports backend cobraserver
         if: matrix.os != 'windows-latest'
       - name: Lint Windows
-        run: golangci-lint run --verbose --config test/.golangci.yml
+        run: golangci-lint run --verbose --config test/.golangci.yml backend cobraserver
         if: matrix.os == 'windows-latest'
 
 #      - name: Test
@@ -85,4 +85,4 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: elementary-ui ${{ matrix.os }}
-          path: app/output
+          path: cmd/ui/output

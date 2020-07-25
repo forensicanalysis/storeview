@@ -19,36 +19,32 @@
 //
 // Author(s): Jonas Plum
 
-package main
+package backend
 
 import (
-	"log"
-	"os"
-
-	"github.com/markbates/pkger"
-
-	"github.com/forensicanalysis/storeview/cobraserver"
-	"github.com/forensicanalysis/storeview/commands"
+	"fmt"
+	"github.com/forensicanalysis/forensicstore"
+	"github.com/patrickmn/go-cache"
+	"time"
 )
 
-//go:generate make install
-//go:generate make build
-//go:generate go get -u github.com/markbates/pkger/cmd/pkger
-//go:generate pkger -o assets
+var queryCache *cache.Cache
 
-func main() {
-	var staticPath pkger.Dir = "/dist"
-	rootCmd := cobraserver.Application(
-		"fstore",
-		800,
-		600,
-		staticPath,
-		false,
-		commands.Commands...,
-	)
+func init() {
+	queryCache = cache.New(5*time.Minute, 10*time.Minute)
+}
 
-	if err := rootCmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(1)
+func storequery(store *forensicstore.ForensicStore, q string) ([]forensicstore.JSONElement, error) {
+	elems, found := queryCache.Get(q)
+	if !found {
+		fmt.Println(q)
+		elems, err := store.Query(q)
+		if err != nil {
+			return nil, err
+		}
+		queryCache.Set(q, elems, cache.DefaultExpiration)
+		return elems, nil
 	}
+
+	return elems.([]forensicstore.JSONElement), nil
 }

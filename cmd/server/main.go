@@ -19,37 +19,36 @@
 //
 // Author(s): Jonas Plum
 
-package commands
+package main
 
 import (
-	"io"
-	"net/http"
+	"log"
+	"os"
 
-	"github.com/spf13/pflag"
+	"github.com/markbates/pkger"
 
-	"github.com/forensicanalysis/forensicstore"
+	"github.com/forensicanalysis/storeview/backend"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func ErrorsCommand() *cobraserver.Command {
-	return &cobraserver.Command{
-		Name:   "listErrors",
-		Route:  "/errors",
-		Method: http.MethodGet,
-		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
-			storeName := flags.Args()[0]
-			store, teardown, err := forensicstore.Open(storeName)
-			if err != nil {
-				return err
-			}
-			defer teardown()
+//go:generate make install
+//go:generate make build
+//go:generate go get -u github.com/markbates/pkger/cmd/pkger
+//go:generate pkger -o assets
 
-			elements, err := store.Query("SELECT json FROM elements WHERE json_extract(json, '$.errors') != ''")
-			if err != nil {
-				return err
-			}
+func main() {
+	var staticPath pkger.Dir = "/dist"
+	rootCmd := cobraserver.Application(
+		"fstore",
+		800,
+		600,
+		staticPath,
+		false,
+		backend.Commands...,
+	)
 
-			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
-		},
+	if err := rootCmd.Execute(); err != nil {
+		log.Println(err)
+		os.Exit(1)
 	}
 }

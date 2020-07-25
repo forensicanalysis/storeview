@@ -3,13 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/asticode/go-astilectron"
-	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"github.com/forensicanalysis/forensicstore"
-	forensicworkflows "github.com/forensicanalysis/forensicworkflows/cmd"
-	"github.com/forensicanalysis/storeview/cobraserver"
-	"github.com/forensicanalysis/storeview/commands"
-	"github.com/gorilla/mux"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +10,15 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/asticode/go-astilectron"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"github.com/gorilla/mux"
+
+	"github.com/forensicanalysis/forensicstore"
+	forensicworkflows "github.com/forensicanalysis/forensicworkflows/cmd"
+	"github.com/forensicanalysis/storeview/backend"
+	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
 type resW struct {
@@ -111,7 +113,7 @@ func handleStoreMessages(storeURL string) func(_ *astilectron.Window, m MessageI
 			return nil, nil
 		}
 
-		router := cobraserver.Router(commands.Commands, func() []string { return []string{storeURL} })
+		router := cobraserver.Router(backend.Commands, func() []string { return []string{storeURL} })
 
 		u, err := url.Parse("/api" + m.Name)
 		if err != nil {

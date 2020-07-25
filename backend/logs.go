@@ -19,7 +19,7 @@
 //
 // Author(s): Jonas Plum
 
-package commands
+package backend
 
 import (
 	"encoding/json"

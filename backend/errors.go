@@ -19,32 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-package commands
+package backend
 
 import (
-	"fmt"
+	"io"
+	"net/http"
+
+	"github.com/spf13/pflag"
+
 	"github.com/forensicanalysis/forensicstore"
-	"github.com/patrickmn/go-cache"
-	"time"
+	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-var queryCache *cache.Cache
+func ErrorsCommand() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listErrors",
+		Route:  "/errors",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
+			if err != nil {
+				return err
+			}
+			defer teardown()
 
-func init() {
-	queryCache = cache.New(5*time.Minute, 10*time.Minute)
-}
+			elements, err := store.Query("SELECT json FROM elements WHERE json_extract(json, '$.errors') != ''")
+			if err != nil {
+				return err
+			}
 
-func storequery(store *forensicstore.ForensicStore, q string) ([]forensicstore.JSONElement, error) {
-	elems, found := queryCache.Get(q)
-	if !found {
-		fmt.Println(q)
-		elems, err := store.Query(q)
-		if err != nil {
-			return nil, err
-		}
-		queryCache.Set(q, elems, cache.DefaultExpiration)
-		return elems, nil
+			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
+		},
 	}
-
-	return elems.([]forensicstore.JSONElement), nil
 }
