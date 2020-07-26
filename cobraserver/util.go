@@ -24,8 +24,9 @@ package cobraserver
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/forensicanalysis/forensicstore"
 	"io"
+
+	"github.com/forensicanalysis/forensicstore"
 )
 
 func PrintAny(w io.Writer, i interface{}) error {

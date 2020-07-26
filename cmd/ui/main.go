@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
+	"path/filepath"
+
 	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"log"
-	"path/filepath"
 )
 
 // Constants

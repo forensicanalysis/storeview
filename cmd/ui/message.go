@@ -113,7 +113,7 @@ func handleStoreMessages(storeURL string) func(_ *astilectron.Window, m MessageI
 			return nil, nil
 		}
 
-		router := cobraserver.Router(backend.Commands, func() []string { return []string{storeURL} })
+		router := cobraserver.Router(backend.Commands(), func() []string { return []string{storeURL} })
 
 		u, err := url.Parse("/api" + m.Name)
 		if err != nil {

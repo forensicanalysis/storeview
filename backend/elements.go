@@ -24,16 +24,18 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/patrickmn/go-cache"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/spf13/pflag"
 
 	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
 )
+
+const defaultLimit = 30
 
 func ListTree() *cobraserver.Command {
 	return &cobraserver.Command{
@@ -70,18 +72,13 @@ func ListTree() *cobraserver.Command {
 
 			col := types[elementType]["col"]
 			separator := types[elementType]["separator"]
-			query := fmt.Sprintf("SELECT substr(%s, length('%s')+1, instr(substr(%s, 1+length('%s')), '%s')-1) as dir "+
-				"FROM 'elements' "+
-				"WHERE json_extract(json, '$.type') = '%s' "+
-				"AND %s LIKE '%s%%' "+
-				"GROUP BY dir",
+			query := fmt.Sprintf("SELECT substr(%s, length('%s')+1, instr(substr(%s, 1+length('%s')), '%s')-1) as dir "+ // nolint: gosec, lll
+				"FROM 'elements' WHERE json_extract(json, '$.type') = '%s' AND %s LIKE '%s%%' GROUP BY dir",
 				col, directory, col, directory, separator, elementType, col, directory)
 			fmt.Println(query)
 
 			var children []string
-
 			conn := store.Connection()
-
 			stmt, err := conn.Prepare(query)
 			if err != nil {
 				return err
@@ -98,7 +95,6 @@ func ListTree() *cobraserver.Command {
 			if err != nil {
 				return err
 			}
-
 			return cobraserver.PrintAny(w, children)
 		},
 	}
@@ -116,7 +112,7 @@ func SelectItems() *cobraserver.Command {
 			f.StringArray("sort", nil, "")
 			f.StringArray("labels", nil, "")
 			f.Int("offset", 0, "")
-			f.Int("limit", 30, "")
+			f.Int("limit", defaultLimit, "")
 		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
 			uid, err := flags.GetString("uid")
@@ -145,66 +141,10 @@ func SelectItems() *cobraserver.Command {
 				return err
 			}
 
-			/*
-				if name == "" {
-					return errors.New("type or uid must be set")
-				}
-			*/
-
-			opt := NewSelectOptions()
-
-			sort, err := flags.GetStringArray("sort")
+			opt, err := selectOptions(flags)
 			if err != nil {
 				return err
 			}
-			if len(sort) > 0 {
-				for _, sorting := range sort {
-					parts := strings.SplitN(sorting, ":", 2)
-					if len(parts) != 2 || parts[0] == "" {
-						return fmt.Errorf("sort parameter %s invalid", sorting)
-					}
-					switch parts[1] {
-					case "ASC":
-						opt.Sort[parts[0]] = SortAscending
-					case "DESC":
-						opt.Sort[parts[0]] = SortDescending
-					case "":
-						opt.Sort[parts[0]] = SortDefault
-					default:
-						return fmt.Errorf("sort direction %s invalid", sorting)
-					}
-				}
-			}
-			filter, err := flags.GetStringArray("filter")
-			if err != nil {
-				return err
-			}
-			if len(filter) > 0 {
-				for _, filtering := range filter {
-					parts := strings.SplitN(filtering, ":", 2)
-					if len(parts) != 2 || parts[0] == "" {
-						return fmt.Errorf("filte parameter %s invalid", filtering)
-					}
-					opt.Filter[parts[0]] = parts[1]
-				}
-			}
-			labels, err := flags.GetStringArray("labels")
-			if err != nil {
-				return err
-			}
-			opt.Labels = labels
-
-			offset, err := flags.GetInt("offset")
-			if err != nil {
-				return err
-			}
-			limit, err := flags.GetInt("limit")
-			if err != nil {
-				return err
-			}
-
-			opt.Limit = limit
-			opt.Offset = offset
 
 			count, items, err := queryStore(store, name, opt)
 			if err != nil {
@@ -213,6 +153,77 @@ func SelectItems() *cobraserver.Command {
 			return cobraserver.PrintJSONList(w, count, items)
 		},
 	}
+}
+
+func selectOptions(flags *pflag.FlagSet) (*SelectOptions, error) {
+	opt := NewSelectOptions()
+
+	sort, err := flags.GetStringArray("sort")
+	if err != nil {
+		return nil, err
+	}
+	if len(sort) > 0 {
+		for _, sorting := range sort {
+			col, direction, err := parseSort(sorting)
+			if err != nil {
+				return nil, err
+			}
+			opt.Sort[col] = direction
+		}
+	}
+
+	filter, err := flags.GetStringArray("filter")
+	if err != nil {
+		return nil, err
+	}
+	if len(filter) > 0 {
+		for _, filtering := range filter {
+			parts := strings.SplitN(filtering, ":", 2)
+			if len(parts) != 2 || parts[0] == "" {
+				return nil, fmt.Errorf("filte parameter %s invalid", filtering)
+			}
+			opt.Filter[parts[0]] = parts[1]
+		}
+	}
+
+	labels, err := flags.GetStringArray("labels")
+	if err != nil {
+		return nil, err
+	}
+	opt.Labels = labels
+
+	offset, err := flags.GetInt("offset")
+	if err != nil {
+		return nil, err
+	}
+	opt.Offset = offset
+
+	limit, err := flags.GetInt("limit")
+	if err != nil {
+		return nil, err
+	}
+	opt.Limit = limit
+
+	return opt, nil
+}
+
+func parseSort(sorting string) (col string, direction Direction, err error) {
+	parts := strings.SplitN(sorting, ":", 2)
+	if len(parts) != 2 || parts[0] == "" {
+		return "", "", fmt.Errorf("sort parameter %s invalid", sorting)
+	}
+	col = parts[0]
+	switch parts[1] {
+	case "ASC":
+		direction = SortAscending
+	case "DESC":
+		direction = SortDescending
+	case "":
+		direction = SortDefault
+	default:
+		return "", "", fmt.Errorf("sort direction %s invalid", sorting)
+	}
+	return col, direction, nil
 }
 
 func ListTables() *cobraserver.Command {
@@ -293,7 +304,7 @@ func Label() *cobraserver.Command {
 				return err
 			}
 
-			stmt, err := conn.Prepare(fmt.Sprintf(
+			stmt, err := conn.Prepare(fmt.Sprintf( // nolint: gosec
 				"UPDATE elements "+
 					"SET json = json_patch(json,'{\"labels\": %s}') "+
 					"WHERE id = $id", string(b),
@@ -399,7 +410,7 @@ func Query() *cobraserver.Command {
 				return err
 			}
 
-			q, err := expandQuery("SELECT json FROM elements WHERE " + query)
+			q, err := expandQuery("SELECT json FROM elements WHERE " + query) // nolint: gosec
 			if err != nil {
 				return err
 			}
@@ -417,8 +428,8 @@ type Direction string
 
 const (
 	SortDefault    Direction = ""
-	SortAscending            = "ASC"
-	SortDescending           = "DESC"
+	SortAscending  Direction = "ASC"
+	SortDescending Direction = "DESC"
 )
 
 type SelectOptions struct {
@@ -434,55 +445,15 @@ func NewSelectOptions() *SelectOptions {
 		Sort:   map[string]Direction{},
 		Filter: map[string]string{},
 		Labels: []string{},
-		Limit:  30,
+		Limit:  defaultLimit,
 		Offset: 0,
 	}
 }
 
-func queryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) (int64, []forensicstore.JSONElement, error) {
-	q := ""
+func queryStore(store *forensicstore.ForensicStore, itemType string, options *SelectOptions) (int64, []forensicstore.JSONElement, error) { // nolint: lll
+	q := buildQuery(itemType, options)
 
-	var filters []string
-
-	if itemType != "" {
-		filters = append(filters, fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType))
-	}
-
-	if len(options.Filter) > 0 {
-		for column, filtering := range options.Filter {
-			if filtering != "" {
-				if column == "elements" {
-					filters = append(filters, fmt.Sprintf("%s MATCH '%s'", column, filtering))
-				} else {
-					filters = append(filters, fmt.Sprintf("json_extract(json, '$.%s') LIKE '%%%s%%'", column, filtering))
-				}
-			}
-		}
-	}
-
-	if len(options.Labels) > 0 {
-		for _, label := range options.Labels {
-			filters = append(filters, fmt.Sprintf("json_extract(json, '$.labels.%s')", label))
-		}
-	}
-
-	if len(filters) > 0 {
-		q += " WHERE " + strings.Join(filters, " AND ")
-	}
-
-	if len(options.Sort) > 0 {
-		var sorts []string
-		for column, sorting := range options.Sort {
-			if sorting != "" {
-				sorts = append(sorts, fmt.Sprintf("json_extract(json, '$.%s') %s", column, sorting))
-			}
-		}
-		if len(sorts) > 0 {
-			q += " ORDER BY " + strings.Join(sorts, ", ")
-		}
-	}
-
-	countQuery := "SELECT count(*) as count FROM elements" + q
+	countQuery := "SELECT count(*) as count FROM elements" + q // nolint: gosec
 
 	var count int64
 	countCached, found := queryCache.Get(countQuery)
@@ -514,6 +485,51 @@ func queryStore(store *forensicstore.ForensicStore, itemType string, options *Se
 	q += fmt.Sprintf(" LIMIT %d", options.Limit)
 	q += fmt.Sprintf(" OFFSET %d", options.Offset)
 	q += ";"
-	elements, err := storequery(store, "SELECT json FROM elements"+q)
+	elements, err := storequery(store, "SELECT json FROM elements"+q) // nolint: gosec
 	return count, elements, err
+}
+
+func buildQuery(itemType string, options *SelectOptions) string {
+	q := ""
+
+	var filters []string
+
+	if itemType != "" {
+		filters = append(filters, fmt.Sprintf("json_extract(json, '$.type') = '%s'", itemType))
+	}
+
+	if len(options.Filter) > 0 {
+		for column, filtering := range options.Filter {
+			if filtering != "" {
+				if column == "elements" {
+					filters = append(filters, fmt.Sprintf("%s MATCH '%s'", column, filtering))
+				} else {
+					filters = append(filters, fmt.Sprintf("json_extract(json, '$.%s') LIKE '%%%s%%'", column, filtering))
+				}
+			}
+		}
+	}
+
+	if len(options.Labels) > 0 {
+		for _, label := range options.Labels {
+			filters = append(filters, fmt.Sprintf("json_extract(json, '$.labels.%s')", label))
+		}
+	}
+
+	if len(filters) > 0 {
+		q += " WHERE " + strings.Join(filters, " AND ") // nolint: gosec
+	}
+
+	if len(options.Sort) > 0 {
+		var sorts []string
+		for column, sorting := range options.Sort {
+			if sorting != "" {
+				sorts = append(sorts, fmt.Sprintf("json_extract(json, '$.%s') %s", column, sorting))
+			}
+		}
+		if len(sorts) > 0 {
+			q += " ORDER BY " + strings.Join(sorts, ", ")
+		}
+	}
+	return q
 }

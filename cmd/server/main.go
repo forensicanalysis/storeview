@@ -37,14 +37,14 @@ import (
 //go:generate pkger -o assets
 
 func main() {
-	var staticPath pkger.Dir = "/dist"
+	var static pkger.Dir = "/dist"
 	rootCmd := cobraserver.Application(
 		"fstore",
 		800,
 		600,
-		staticPath,
+		static,
 		false,
-		backend.Commands...,
+		backend.Commands()...,
 	)
 
 	if err := rootCmd.Execute(); err != nil {

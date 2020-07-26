@@ -23,10 +23,11 @@ package backend
 
 import (
 	"encoding/json"
-	"github.com/spf13/pflag"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/spf13/pflag"
 
 	"github.com/forensicanalysis/forensicstore"
 	"github.com/forensicanalysis/storeview/cobraserver"
@@ -37,18 +38,7 @@ func Logs() *cobraserver.Command {
 		Name:   "listLogs",
 		Route:  "/logs",
 		Method: http.MethodGet,
-		SetupFlags: func(f *pflag.FlagSet) {
-			f.String("path", "", "path")
-		},
 		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
-			p, err := flags.GetString("path")
-			if err != nil {
-				return err
-			}
-			if p == "" {
-				p = "/"
-			}
-
 			storeName := flags.Args()[0]
 			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {

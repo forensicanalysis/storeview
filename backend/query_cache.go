@@ -23,15 +23,20 @@ package backend
 
 import (
 	"fmt"
-	"github.com/forensicanalysis/forensicstore"
-	"github.com/patrickmn/go-cache"
 	"time"
+
+	"github.com/patrickmn/go-cache"
+
+	"github.com/forensicanalysis/forensicstore"
 )
 
-var queryCache *cache.Cache
+const cacheExpiration = 5 * time.Minute
+const cacheCleanupInterval = 10 * time.Minute
 
-func init() {
-	queryCache = cache.New(5*time.Minute, 10*time.Minute)
+var queryCache *cache.Cache // nolint: gochecknoglobals
+
+func init() { // nolint: gochecknoinits
+	queryCache = cache.New(cacheExpiration, cacheCleanupInterval)
 }
 
 func storequery(store *forensicstore.ForensicStore, q string) ([]forensicstore.JSONElement, error) {
