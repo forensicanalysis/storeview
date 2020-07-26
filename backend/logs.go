@@ -19,54 +19,66 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+package backend
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"net/http"
+	"strings"
+
+	"github.com/spf13/pflag"
 
 	"github.com/forensicanalysis/forensicstore"
+	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
-
-	return PrintJSON(w, b)
-}
-
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
-
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
+func Logs() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listLogs",
+		Route:  "/logs",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
-		}
-		_, err := w.Write(element)
-		if err != nil {
-			return err
-		}
+			defer teardown()
+
+			var children []forensicstore.JSONElement
+
+			connection := store.Connection()
+
+			stmt, err := connection.Prepare("SELECT * FROM logs ORDER BY insert_time ASC")
+			if err != nil {
+				return err
+			}
+			for {
+				if hasRow, err := stmt.Step(); err != nil {
+					return err
+				} else if !hasRow {
+					break
+				}
+				msg := stmt.GetText("msg")[20:]
+				parts := strings.SplitN(msg, ":", 3)
+				b, _ := json.Marshal(struct {
+					Message string `json:"message"`
+					File    string `json:"file"`
+					Time    string `json:"time"`
+				}{
+					strings.TrimSpace(parts[2]),
+					parts[0] + ":" + parts[1],
+					stmt.GetText("insert_time"),
+				})
+				children = append(children, b)
+			}
+			err = stmt.Finalize()
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintJSONList(w, int64(len(children)), children)
+		},
 	}
-
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
 }

@@ -19,54 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+import VueLodash from 'vue-lodash';
+import vuetify from './plugins/vuetify';
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
 
-	"github.com/forensicanalysis/forensicstore"
-)
+import App from './App.vue';
+// import './registerServiceWorker';
+import router from './router';
+import store from './store';
 
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
+import 'roboto-fontface/css/roboto/roboto-fontface.css';
+import 'roboto-fontface/css/roboto-slab/roboto-slab-fontface.css';
+import '@mdi/font/css/materialdesignicons.css';
 
-	return PrintJSON(w, b)
-}
+Vue.use(VueAxios, axios);
+Vue.use(VueLodash);
 
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
+Vue.config.productionTip = false;
 
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
-			if err != nil {
-				return err
-			}
-		}
-		_, err := w.Write(element)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
+let v = new Vue({
+  router,
+  store,
+  vuetify,
+  render: h => h(App),
+});
+if (window && window.process && window.process.type) {
+  document.addEventListener('astilectron-ready', function () {
+    v.$mount('#app');
+  });
+} else {
+  v.$mount('#app');
 }

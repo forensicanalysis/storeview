@@ -19,54 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+package backend
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
+	"time"
+
+	"github.com/patrickmn/go-cache"
 
 	"github.com/forensicanalysis/forensicstore"
 )
 
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
+const cacheExpiration = 5 * time.Minute
+const cacheCleanupInterval = 10 * time.Minute
 
-	return PrintJSON(w, b)
+var queryCache *cache.Cache // nolint: gochecknoglobals
+
+func init() { // nolint: gochecknoinits
+	queryCache = cache.New(cacheExpiration, cacheCleanupInterval)
 }
 
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
-
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
-			if err != nil {
-				return err
-			}
-		}
-		_, err := w.Write(element)
+func storequery(store *forensicstore.ForensicStore, q string) ([]forensicstore.JSONElement, error) {
+	elems, found := queryCache.Get(q)
+	if !found {
+		fmt.Println(q)
+		elems, err := store.Query(q)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		queryCache.Set(q, elems, cache.DefaultExpiration)
+		return elems, nil
 	}
 
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
+	return elems.([]forensicstore.JSONElement), nil
 }

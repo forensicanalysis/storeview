@@ -19,54 +19,33 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+import axios from 'axios';
 
-import (
-	"encoding/json"
-	"fmt"
-	"io"
-
-	"github.com/forensicanalysis/forensicstore"
-)
-
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
-
-	return PrintJSON(w, b)
-}
-
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
-
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
-			if err != nil {
-				return err
-			}
-		}
-		_, err := w.Write(element)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
+export function invoke(method, url, arg, callback) {
+  if (window.astilectron !== undefined) {
+    window.astilectron.sendMessage({"name": url, "payload": arg, "method": method}, function (message) {
+      console.log(message);
+      if (message.payload !== undefined) {
+        callback(message.payload);
+      }
+    });
+  } else if (window.external.invoke !== undefined) {
+    // local mode
+    window.external.invoke(JSON.stringify(arg));
+  } else {
+    // server mode
+    let server = '';
+    if (typeof webpackHotUpdate !== 'undefined') {
+      // dev mode
+      server = `http://${window.location.hostname}:8081`;
+    }
+    axios({
+      method,
+      url: `${server}/api${url}`,
+      data: arg,
+    })
+      .then((response) => {
+        callback(response.data);
+      });
+  }
 }

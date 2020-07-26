@@ -19,54 +19,37 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+package backend
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
+	"net/http"
+
+	"github.com/spf13/pflag"
 
 	"github.com/forensicanalysis/forensicstore"
+	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
-
-	return PrintJSON(w, b)
-}
-
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
-
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
+func ErrorsCommand() *cobraserver.Command {
+	return &cobraserver.Command{
+		Name:   "listErrors",
+		Route:  "/errors",
+		Method: http.MethodGet,
+		Handler: func(w io.Writer, _ io.Reader, flags *pflag.FlagSet) error {
+			storeName := flags.Args()[0]
+			store, teardown, err := forensicstore.Open(storeName)
 			if err != nil {
 				return err
 			}
-		}
-		_, err := w.Write(element)
-		if err != nil {
-			return err
-		}
+			defer teardown()
+
+			elements, err := store.Query("SELECT json FROM elements WHERE json_extract(json, '$.errors') != ''")
+			if err != nil {
+				return err
+			}
+
+			return cobraserver.PrintJSONList(w, int64(len(elements)), elements)
+		},
 	}
-
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
 }

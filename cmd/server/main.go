@@ -19,54 +19,36 @@
 //
 // Author(s): Jonas Plum
 
-package cobraserver
+package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
+	"log"
+	"os"
 
-	"github.com/forensicanalysis/forensicstore"
+	"github.com/markbates/pkger"
+
+	"github.com/forensicanalysis/storeview/backend"
+	"github.com/forensicanalysis/storeview/cobraserver"
 )
 
-func PrintAny(w io.Writer, i interface{}) error {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return err
+//go:generate make install
+//go:generate make build
+//go:generate go get -u github.com/markbates/pkger/cmd/pkger
+//go:generate pkger -o assets
+
+func main() {
+	var static pkger.Dir = "/dist"
+	rootCmd := cobraserver.Application(
+		"fstore",
+		800,
+		600,
+		static,
+		false,
+		backend.Commands()...,
+	)
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Println(err)
+		os.Exit(1)
 	}
-
-	return PrintJSON(w, b)
-}
-
-func PrintJSONList(w io.Writer, count int64, elements []forensicstore.JSONElement) error {
-	_, err := w.Write([]byte(fmt.Sprintf("{\"count\": %d, \"elements\": [", count)))
-	if err != nil {
-		return err
-	}
-
-	for i, element := range elements {
-		if i != 0 {
-			_, err := w.Write([]byte(","))
-			if err != nil {
-				return err
-			}
-		}
-		_, err := w.Write(element)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = w.Write([]byte("]}\n"))
-	return err
-}
-
-func PrintJSON(w io.Writer, b []byte) error {
-	_, err := w.Write(b)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write([]byte("\n"))
-
-	return err
 }

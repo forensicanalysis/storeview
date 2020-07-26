@@ -24,9 +24,9 @@ package cobraserver
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 
-	"github.com/markbates/pkger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -40,20 +40,20 @@ type Command struct {
 	Handler    func(io.Writer, io.Reader, *pflag.FlagSet) error
 }
 
-func Application(name string, width, height int, staticPath pkger.Dir, uiRoot bool, commands ...*Command) *cobra.Command {
-	var rootCmd *cobra.Command
+func Application(name string, width, height int, static http.FileSystem, uiRoot bool, cmds ...*Command) *cobra.Command {
+	rootCmd := &cobra.Command{Use: name}
 
 	//uiCmd := UICommand(name, width, height, staticPath, commands...)
 	//if uiRoot {
 	//	rootCmd = uiCmd
 	//	rootCmd.Use = name
 	//} else {
-	rootCmd = &cobra.Command{Use: name}
+	// rootCmd = &cobra.Command{Use: name}
 	//	rootCmd.AddCommand(uiCmd)
 	//}
 
-	rootCmd.AddCommand(Commandline(commands...)...)
-	rootCmd.AddCommand(ServeCommand(staticPath, commands...))
+	rootCmd.AddCommand(Commandline(cmds...)...)
+	rootCmd.AddCommand(ServeCommand(static, cmds...))
 
 	// parse config
 	var cfgFile string
