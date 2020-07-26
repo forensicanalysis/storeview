@@ -14,12 +14,12 @@ let open = {
     newButton.innerHTML = `<i class="fa fa-plus"></i><span>New forensicstore</span>`;
     document.getElementById("menu").appendChild(newButton);
 
-    let imageButton = document.createElement("button");
-    imageButton.onclick = function() {
-      main.image()
-    };
-    imageButton.innerHTML = `<i class="fa fa-hdd-o"></i><span>Import disk image</span>`;
-    document.getElementById("menu").appendChild(imageButton);
+    // let imageButton = document.createElement("button");
+    // imageButton.onclick = function() {
+    //   main.image()
+    // };
+    // imageButton.innerHTML = `<i class="fa fa-hdd-o"></i><span>Import disk image</span>`;
+    // document.getElementById("menu").appendChild(imageButton);
   },
   init: function () {
     open.addFolder();
