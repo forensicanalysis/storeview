@@ -85,8 +85,8 @@ Author(s): Jonas Plum
                :src="'http://localhost:8081/api/file?path='+content.export_path"
                style="width: 100%"/>
         </v-card>
-      </v-tab-item>
-    </v-tabs-items>-->
+      </v-tab-item>-->
+    </v-tabs-items>
   </div>
 </template>
 
